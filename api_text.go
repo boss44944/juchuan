@@ -21,6 +21,11 @@ func (s *Server) TextHandler(w http.ResponseWriter,r *http.Request){
   return
  }
 
+ if err:=ReceiveText(s.db,s.clipboard,s.hub,req.Content);err!=nil{
+  http.Error(w,"internal error",500)
+  return
+ }
+
  w.Header().Set("Content-Type","application/json")
  json.NewEncoder(w).Encode(map[string]string{"status":"ok"})
 }
