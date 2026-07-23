@@ -18,7 +18,10 @@ func StartTray(url string, quit chan struct{}) {
     case <-open.ClickedCh:
      OpenBrowser(url)
     case <-exit.ClickedCh:
-     close(quit)
+     select {
+     case quit <- struct{}{}:
+     default:
+     }
      systray.Quit()
      return
     }
