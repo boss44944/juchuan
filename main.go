@@ -23,10 +23,22 @@ func main() {
 
  OpenBrowser(url)
 
- quit := make(chan struct{})
+ quit := make(chan struct{}, 1)
  go StartTray(url, quit)
 
- if err := s.Start(); err != nil {
-  log.Fatal(err)
+ serverErr := make(chan error, 1)
+ go func() {
+  serverErr <- s.Start()
+ }()
+
+ select {
+ case <-quit:
+  if err := s.Shutdown(); err != nil {
+   log.Println("shutdown error:", err)
+  }
+ case err := <-serverErr:
+  if err != nil {
+   log.Fatal(err)
+  }
  }
 }
