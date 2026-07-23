@@ -4,6 +4,7 @@ import (
  "database/sql"
  "embed"
  "net/http"
+ "fmt"
 )
 
 type Server struct {
@@ -23,8 +24,10 @@ func NewServer() (*Server, error) {
  db, err := InitDatabase(storage.DB)
  if err != nil { return nil, err }
 
+ port:=FindAvailablePort(8000)
+
  return &Server{
-  addr: ":8000",
+  addr: fmt.Sprintf(":%d",port),
   hub: NewHub(),
   storage: storage,
   db: db,
