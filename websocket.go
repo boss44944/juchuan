@@ -17,7 +17,7 @@ type WSMessage struct {
 }
 
 type Hub struct {
- clients map[*websocket.Conn]bool
+ clients map[string]*websocket.Conn
  mu sync.Mutex
 }
 
@@ -26,29 +26,44 @@ var upgrader = websocket.Upgrader{
 }
 
 func NewHub()*Hub{
- return &Hub{clients:make(map[*websocket.Conn]bool)}
+ return &Hub{clients:make(map[string]*websocket.Conn)}
 }
 
 func (h *Hub) Broadcast(v WSMessage){
- b,_:=json.Marshal(v)
  h.mu.Lock()
  defer h.mu.Unlock()
- for c:=range h.clients {
+ b,_:=json.Marshal(v)
+ for _,c:=range h.clients {
   _=c.WriteMessage(websocket.TextMessage,b)
  }
 }
 
+func (h *Hub) SendTo(deviceID string,v WSMessage) error {
+ h.mu.Lock()
+ defer h.mu.Unlock()
+ c,ok:=h.clients[deviceID]
+ if !ok { return nil }
+ b,_:=json.Marshal(v)
+ return c.WriteMessage(websocket.TextMessage,b)
+}
+
 func (h *Hub) Handler(w http.ResponseWriter,r *http.Request){
+ deviceID:=r.URL.Query().Get("device")
+ if deviceID=="" {
+  http.Error(w,"missing device",400)
+  return
+ }
+
  conn,err:=upgrader.Upgrade(w,r)
  if err!=nil{return}
 
  h.mu.Lock()
- h.clients[conn]=true
+ h.clients[deviceID]=conn
  h.mu.Unlock()
 
  defer func(){
   h.mu.Lock()
-  delete(h.clients,conn)
+  delete(h.clients,deviceID)
   h.mu.Unlock()
   conn.Close()
  }()
