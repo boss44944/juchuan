@@ -1,14 +1,26 @@
 package main
 
 import (
- "crypto/rand"
- "encoding/hex"
+ "os"
  "path/filepath"
+ "strconv"
 )
 
-func SafeFileName(name string) string {
- ext:=filepath.Ext(name)
- b:=make([]byte,8)
- _,_=rand.Read(b)
- return hex.EncodeToString(b)+ext
+// SafeFileName keeps the original filename.
+// If the same name already exists, append (1), (2), etc.
+func SafeFileName(dir, name string) string {
+ base := filepath.Base(name)
+ ext := filepath.Ext(base)
+ filename := base[:len(base)-len(ext)]
+
+ candidate := base
+ index := 1
+
+ for {
+  if _, err := os.Stat(filepath.Join(dir, candidate)); os.IsNotExist(err) {
+   return candidate
+  }
+  candidate = filename + "(" + strconv.Itoa(index) + ")" + ext
+  index++
+ }
 }
