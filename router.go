@@ -12,4 +12,5 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
  mux.HandleFunc("/download/", s.DownloadHandler)
  mux.HandleFunc("/api/device/register", s.DeviceRegisterHandler)
  mux.HandleFunc("/api/devices", s.DevicesHandler)
+ mux.HandleFunc("/api/send/file", s.SendFileHandler)
 }
