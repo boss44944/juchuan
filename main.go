@@ -23,6 +23,9 @@ func main() {
 
  OpenBrowser(url)
 
+ quit := make(chan struct{})
+ go StartTray(url, quit)
+
  if err := s.Start(); err != nil {
   log.Fatal(err)
  }
