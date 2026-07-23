@@ -13,6 +13,7 @@ type Server struct {
  storage *Storage
  db *sql.DB
  clipboard *Clipboard
+ devices *DeviceManager
 }
 
 func NewServer() (*Server, error) {
@@ -28,6 +29,7 @@ func NewServer() (*Server, error) {
   storage: storage,
   db: db,
   clipboard: &Clipboard{},
+  devices: NewDeviceManager(),
  }, nil
 }
 
