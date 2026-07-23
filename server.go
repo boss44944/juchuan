@@ -3,8 +3,9 @@ package main
 import (
  "database/sql"
  "embed"
- "net/http"
  "fmt"
+ "io/fs"
+ "net/http"
 )
 
 type Server struct {
@@ -28,6 +29,7 @@ func NewServer() (*Server, error) {
 
  return &Server{
   addr: fmt.Sprintf(":%d",port),
+  static: StaticFiles,
   hub: NewHub(),
   storage: storage,
   db: db,
@@ -44,6 +46,8 @@ func (s *Server) Start() error {
  mux := http.NewServeMux()
  s.registerRoutes(mux)
 
+ staticFS,_:=fs.Sub(s.static,"static")
+ mux.Handle("/static/",http.StripPrefix("/static/",http.FileServer(http.FS(staticFS))))
  mux.HandleFunc("/ws", s.hub.Handler)
  mux.HandleFunc("/api/text", s.TextHandler)
 
