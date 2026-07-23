@@ -23,17 +23,33 @@ function connectWS(){
    }
   }
  };
- ws.onclose=function(){
-  setTimeout(connectWS,3000);
- };
+ ws.onclose=function(){setTimeout(connectWS,3000);};
+}
+
+function loadHistory(){
+ fetch('/api/history?page=1&size=20')
+ .then(r=>r.json())
+ .then(list=>{
+  document.getElementById('history').innerHTML=list.map(h=>
+   h.type==='file'
+   ? '<div>'+h.filename+' <a href="/download/'+h.id+'">下载</a></div>'
+   : '<div>'+h.content+'</div>'
+  ).join('');
+ });
+}
+
+function loadDevices(){
+ fetch('/api/devices')
+ .then(r=>r.json())
+ .then(list=>{
+  document.getElementById('devices').innerHTML=list.map(d=>
+   '<div>'+d.Name+'</div>'
+  ).join('');
+ });
 }
 
 function sendText(){
- fetch('/api/text',{
-  method:'POST',
-  headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({content:document.getElementById('text').value})
- });
+ fetch('/api/text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:document.getElementById('text').value})});
 }
 
 function uploadFile(){
@@ -45,3 +61,5 @@ function uploadFile(){
 
 registerDevice();
 connectWS();
+loadHistory();
+loadDevices();
