@@ -1,15 +1,17 @@
 package main
 
 import (
- "database/sql"
- _ "modernc.org/sqlite"
+	"database/sql"
+	_ "modernc.org/sqlite"
 )
 
-func InitDatabase(path string)(*sql.DB,error){
- db,err:=sql.Open("sqlite",path)
- if err!=nil{return nil,err}
+func InitDatabase(path string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		return nil, err
+	}
 
- _,err=db.Exec(`CREATE TABLE IF NOT EXISTS history(
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS history(
  id INTEGER PRIMARY KEY AUTOINCREMENT,
  type TEXT NOT NULL,
  direction TEXT,
@@ -20,8 +22,10 @@ func InitDatabase(path string)(*sql.DB,error){
  size INTEGER,
  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
  );`)
- if err!=nil{return nil,err}
+	if err != nil {
+		return nil, err
+	}
 
- _,err=db.Exec(`CREATE INDEX IF NOT EXISTS idx_history_created_at ON history(created_at DESC);`)
- return db,err
+	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS idx_history_created_at ON history(created_at DESC);`)
+	return db, err
 }

@@ -1,9 +1,10 @@
 package main
 
 import (
- "embed"
+	"embed"
 )
 
 // StaticFiles contains frontend assets.
+//
 //go:embed static/*
 var StaticFiles embed.FS
