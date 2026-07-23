@@ -14,7 +14,7 @@ type Storage struct {
 }
 
 func NewStorage() (*Storage,error){
- root,err:=os.Getwd()
+ root,err:=AppDataDir()
  if err!=nil{return nil,err}
 
  upload:=filepath.Join(root,"uploads")
