@@ -1,9 +1,9 @@
 package main
 
-import (
- "github.com/getlantern/systray"
-)
+import "github.com/getlantern/systray"
 
+// StartTray starts the desktop tray menu.
+// The tray remains active after the browser window is closed.
 func StartTray(url string, quit chan struct{}) {
  systray.Run(func() {
   systray.SetTitle("Juchuan 菊传")
