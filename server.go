@@ -5,14 +5,8 @@ import (
  "net/http"
 )
 
-type Server struct { cfg Config }
+type Server struct { addr string }
 
-func NewServer(cfg Config)*Server{return &Server{cfg:cfg}}
-
-func(s *Server)Start()error{
- http.HandleFunc("/",func(w http.ResponseWriter,r *http.Request){
-  w.Header().Set("Content-Type","text/html;charset=utf-8")
-  fmt.Fprint(w,"<h1>菊传 Juchuan</h1><p>LAN Transfer Server</p>")
- })
- return http.ListenAndServe(fmt.Sprintf(":%d",s.cfg.Port),nil)
-}
+func NewServer() (*Server,error) { return &Server{addr: ":8000"}, nil }
+func (s *Server) Address() string { return s.addr }
+func (s *Server) Start() error { return http.ListenAndServe(s.addr, http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){fmt.Fprintln(w,"Juchuan") })) }
