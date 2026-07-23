@@ -1,10 +1,9 @@
 package main
 
-import (
- "database/sql"
- "path/filepath"
-)
+import "database/sql"
 
+// SaveFileHistory stores only file metadata.
+// The actual file is always kept on disk.
 func SaveFileHistory(db *sql.DB, filePath, filename, mime string, size int64, direction string) error {
  return AddHistory(db, History{
   Type:"file",
@@ -14,13 +13,4 @@ func SaveFileHistory(db *sql.DB, filePath, filename, mime string, size int64, di
   Mime:mime,
   Size:size,
  })
-}
-
-func IsImageFile(filename string) bool {
- ext:=filepath.Ext(filename)
- switch ext {
- case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic":
-  return true
- }
- return false
 }
