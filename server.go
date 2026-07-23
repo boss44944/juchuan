@@ -1,6 +1,7 @@
 package main
 
 import (
+ "context"
  "database/sql"
  "embed"
  "fmt"
@@ -16,6 +17,7 @@ type Server struct {
  db *sql.DB
  clipboard *Clipboard
  devices *DeviceManager
+ httpServer *http.Server
 }
 
 func NewServer() (*Server, error) {
@@ -51,5 +53,13 @@ func (s *Server) Start() error {
  mux.HandleFunc("/ws", s.hub.Handler)
  mux.HandleFunc("/api/text", s.TextHandler)
 
- return http.ListenAndServe(s.addr, mux)
+ s.httpServer=&http.Server{Addr:s.addr,Handler:mux}
+ return s.httpServer.ListenAndServe()
+}
+
+func (s *Server) Shutdown() error {
+ if s.httpServer==nil { return nil }
+ if err:=s.httpServer.Shutdown(context.Background());err!=nil{return err}
+ if s.db!=nil{return s.db.Close()}
+ return nil
 }
