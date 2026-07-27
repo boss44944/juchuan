@@ -32,6 +32,8 @@ jobs:
           test -f Juchuan.app/Contents/Info.plist
           test -f Juchuan.app/Contents/MacOS/juchuan
           test -f Juchuan.app/Contents/Resources/Juchuan.icns
+          file Juchuan.app/Contents/MacOS/juchuan
+          codesign --verify --deep --strict Juchuan.app || true
 
       - name: Package
         run: |
