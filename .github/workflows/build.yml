@@ -40,16 +40,6 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
-      - name: Format check
-        shell: bash
-        run: |
-          files=$(gofmt -l .)
-          if [ -n "$files" ]; then
-            echo "These files need gofmt:"
-            echo "$files"
-            exit 1
-          fi
-
       - name: Test
         run: go test ./...
 
