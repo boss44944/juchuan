@@ -26,6 +26,13 @@ jobs:
           chmod +x build-mac-app.sh
           ./build-mac-app.sh
 
+      - name: Verify App Bundle
+        run: |
+          test -d Juchuan.app
+          test -f Juchuan.app/Contents/Info.plist
+          test -f Juchuan.app/Contents/MacOS/juchuan
+          test -f Juchuan.app/Contents/Resources/Juchuan.icns
+
       - name: Package
         run: |
           zip -r Juchuan-darwin-arm64.zip Juchuan.app
