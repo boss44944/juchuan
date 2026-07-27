@@ -42,15 +42,26 @@ cat > "${CONTENTS}/Info.plist" <<EOF
     <string>${BINARY}</string>
     <key>CFBundleIconFile</key>
     <string>Juchuan.icns</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleSignature</key>
+    <string>JCHN</string>
     <key>CFBundleVersion</key>
     <string>1.0.0</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0.0</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
     <key>LSUIElement</key>
+    <true/>
+    <key>NSHighResolutionCapable</key>
     <true/>
 </dict>
 </plist>
 EOF
+
+plutil -lint "${CONTENTS}/Info.plist"
+file "${CONTENTS}/MacOS/${BINARY}"
 
 chmod +x "${CONTENTS}/MacOS/${BINARY}"
 
