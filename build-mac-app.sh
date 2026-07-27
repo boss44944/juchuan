@@ -42,6 +42,12 @@ cat > "${CONTENTS}/Info.plist" <<EOF
     <string>${BINARY}</string>
     <key>CFBundleIconFile</key>
     <string>Juchuan.icns</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>LSUIElement</key>
+    <true/>
 </dict>
 </plist>
 EOF
