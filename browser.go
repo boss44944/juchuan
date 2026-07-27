@@ -22,5 +22,5 @@ func OpenBrowser(url string) {
 }
 
 func LocalURL(port string) string {
-	return fmt.Sprintf("http://%s:%s", GetLocalIP(), port)
+	return fmt.Sprintf("http://%s:%s", LocalIP(), port)
 }
