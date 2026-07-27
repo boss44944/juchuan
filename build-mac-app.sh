@@ -46,6 +46,10 @@ cat > "${CONTENTS}/Info.plist" <<EOF
     <string>APPL</string>
     <key>CFBundleSignature</key>
     <string>JCHN</string>
+    <key>CFBundleSupportedPlatforms</key>
+    <array>
+        <string>MacOSX</string>
+    </array>
     <key>CFBundleVersion</key>
     <string>1.0.0</string>
     <key>CFBundleShortVersionString</key>
@@ -64,5 +68,9 @@ plutil -lint "${CONTENTS}/Info.plist"
 file "${CONTENTS}/MacOS/${BINARY}"
 
 chmod +x "${CONTENTS}/MacOS/${BINARY}"
+
+codesign --force --deep --sign - "${APP_DIR}" || true
+
+codesign --verify --deep --strict "${APP_DIR}" || true
 
 echo "Created ${APP_DIR}"
