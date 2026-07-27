@@ -8,7 +8,24 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: build-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+          - os: macos-13
+            goos: darwin
+            goarch: amd64
 
     steps:
       - name: Checkout
@@ -23,6 +40,7 @@ jobs:
         run: go mod download
 
       - name: Format check
+        shell: bash
         run: |
           files=$(gofmt -l .)
           if [ -n "$files" ]; then
@@ -35,4 +53,6 @@ jobs:
         run: go test ./...
 
       - name: Build
-        run: go build -v ./...
+        shell: bash
+        run: |
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -v ./...
