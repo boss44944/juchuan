@@ -1,0 +1,37 @@
+name: macOS App
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'build-mac-app.sh'
+      - 'app-logo.png'
+      - '.github/workflows/macos-app.yml'
+
+jobs:
+  build-macos-app:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Build App
+        run: |
+          chmod +x build-mac-app.sh
+          ./build-mac-app.sh
+
+      - name: Package
+        run: |
+          zip -r Juchuan-darwin-arm64.zip Juchuan.app
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Juchuan-darwin-arm64
+          path: Juchuan-darwin-arm64.zip
