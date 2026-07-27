@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 )
 
 type SendFileRequest struct {
@@ -26,7 +27,7 @@ func (s *Server) SendFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = s.hub.SendTo(req.Device, WSMessage{
 		Type:     "file",
-		URL:      "/download/" + json.Number(req.HistoryID).String(),
+		URL:      "/download/" + strconv.FormatInt(req.HistoryID, 10),
 		Filename: filename,
 	})
 	if err != nil {
