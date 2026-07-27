@@ -56,7 +56,7 @@ func (h *Hub) Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := upgrader.Upgrade(w, r)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
