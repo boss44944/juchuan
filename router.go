@@ -7,6 +7,8 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 		w.Write([]byte("ok"))
 	})
 
+	mux.HandleFunc("/api/system/info", SystemInfoHandler)
+
 	mux.HandleFunc("/api/auth/status", s.AuthStatusHandler)
 	mux.HandleFunc("/api/auth/login", s.LoginHandler)
 	mux.HandleFunc("/api/auth/logout", s.LogoutHandler)
