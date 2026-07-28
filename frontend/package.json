@@ -12,6 +12,7 @@
     "element-plus": "latest",
     "pinia": "latest",
     "vue": "latest",
+    "vue-i18n": "latest",
     "vue-router": "latest"
   },
   "devDependencies": {
