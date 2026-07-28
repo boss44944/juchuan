@@ -43,9 +43,13 @@ func NewServer() (*Server, error) {
 		return nil, err
 	}
 
-	// Temporary simplification: keep a known password for easier LAN onboarding.
 	cfg.Password = "123456"
 	if err := SaveConfig(cfg); err != nil {
+		return nil, err
+	}
+
+	devices := NewDeviceManager()
+	if err := LoadDevices(db, devices); err != nil {
 		return nil, err
 	}
 
@@ -62,7 +66,7 @@ func NewServer() (*Server, error) {
 		storage:   storage,
 		db:        db,
 		clipboard: &Clipboard{},
-		devices:   NewDeviceManager(),
+		devices:   devices,
 		config:    cfg,
 		sessions:  make(map[string]time.Time),
 	}, nil
