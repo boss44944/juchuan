@@ -3,10 +3,13 @@ package main
 import "sync"
 
 type Device struct {
-	ID       string
-	Name     string
-	Token    string
-	LastSeen int64
+	ID           string `json:"id"`
+	DisplayName  string `json:"display_name"`
+	Role         string `json:"role"`
+	Platform     string `json:"platform"`
+	Browser      string `json:"browser"`
+	DeviceSecret string `json:"device_secret,omitempty"`
+	LastSeen     int64  `json:"last_seen"`
 }
 
 type DeviceManager struct {
@@ -24,6 +27,13 @@ func (m *DeviceManager) Add(d *Device) {
 	m.devices[d.ID] = d
 }
 
+func (m *DeviceManager) Get(id string) (*Device, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	d, ok := m.devices[id]
+	return d, ok
+}
+
 func (m *DeviceManager) List() []*Device {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -32,4 +42,15 @@ func (m *DeviceManager) List() []*Device {
 		out = append(out, d)
 	}
 	return out
+}
+
+func (m *DeviceManager) NameExists(name string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, d := range m.devices {
+		if d.DisplayName == name {
+			return true
+		}
+	}
+	return false
 }
