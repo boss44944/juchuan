@@ -26,6 +26,19 @@ func InitDatabase(path string) (*sql.DB, error) {
 		return nil, err
 	}
 
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS devices(
+ id TEXT PRIMARY KEY,
+ display_name TEXT NOT NULL,
+ role TEXT,
+ platform TEXT,
+ browser TEXT,
+ device_secret TEXT,
+ last_seen INTEGER
+ );`)
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS idx_history_created_at ON history(created_at DESC);`)
 	return db, err
 }
