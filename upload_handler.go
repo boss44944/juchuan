@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 )
 
 func (s *Server) UploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -27,9 +28,16 @@ func (s *Server) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var historyID int64
+	if err := s.db.QueryRow("SELECT id FROM history WHERE filepath=? ORDER BY id DESC LIMIT 1", path).Scan(&historyID); err != nil {
+		http.Error(w, "history lookup failed", 500)
+		return
+	}
+
 	s.hub.Broadcast(WSMessage{
-		Type: "file",
-		URL:  path,
+		Type:     "file",
+		URL:      "/download/" + strconv.FormatInt(historyID, 10),
+		Filename: files[0].Filename,
 	})
 
 	w.Write([]byte("ok"))

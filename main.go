@@ -19,9 +19,21 @@ func main() {
 	log.Println("")
 	log.Println("访问地址:")
 	log.Println(url)
+	if cfgPath, err := configFilePath(); err == nil {
+		log.Println("配置文件:")
+		log.Println(cfgPath)
+	}
+	if pwd := s.CurrentPassword(); strings.TrimSpace(pwd) != "" {
+		log.Println("当前访问密码:")
+		log.Println(pwd)
+	} else {
+		log.Println("当前访问密码: 未启用")
+	}
 	log.Println("==============================")
 
-	OpenBrowser(url)
+	if s.ShouldAutoOpen() {
+		OpenBrowser(url)
+	}
 
 	quit := make(chan struct{}, 1)
 	go StartTray(url, quit)

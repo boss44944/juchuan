@@ -5,7 +5,6 @@ if (!deviceId) {
 }
 
 const state = {
-    authed: false,
     ws: null,
     historyPage: 1,
     historySize: 50,
@@ -38,8 +37,7 @@ async function apiFetch(url, options) {
     });
 
     if (res.status === 401) {
-        state.authed = false;
-        toggleView(false);
+        location.replace('/login');
         throw new Error('未登录或登录已过期');
     }
 
@@ -55,64 +53,24 @@ function activateTab(name) {
     });
 }
 
-function toggleView(isAuthed) {
-    $('loginView').hidden = !!isAuthed;
-    $('appView').hidden = !isAuthed;
-}
-
 function setAddressAndQR() {
     const url = location.origin + '/';
-
-    const address = $('addressLink');
-    if (address) {
-        address.href = url;
-        address.textContent = url;
-    }
-
-    const qrURL = '/api/qr?url=' + encodeURIComponent(url) + '&t=' + Date.now();
-    const qr = $('qrImage');
-    if (qr) {
-        qr.src = qrURL;
-    }
-
-    const loginQr = $('loginQr');
-    if (loginQr) {
-        loginQr.src = qrURL;
-    }
+    const link = $('addressLink');
+    link.href = url;
+    link.textContent = url;
+    $('qrImage').src = '/api/qr?url=' + encodeURIComponent(url) + '&t=' + Date.now();
 }
 
-async function refreshAuthStatus() {
+async function ensureAuth() {
     const res = await fetch('/api/auth/status', { credentials: 'include' });
     if (!res.ok) {
-        throw new Error('认证状态检查失败');
+        location.replace('/login');
+        return;
     }
-
     const data = await res.json();
-    state.authed = !data.requires_password || data.authenticated;
-    toggleView(state.authed);
-}
-
-async function login(password) {
-    const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-    });
-
-    if (!res.ok) {
-        throw new Error('密码错误，请重试');
+    if (data.requires_password && !data.authenticated) {
+        location.replace('/login');
     }
-}
-
-async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    state.authed = false;
-    if (state.ws) {
-        state.ws.close();
-        state.ws = null;
-    }
-    toggleView(false);
 }
 
 async function registerDevice() {
@@ -146,12 +104,6 @@ function connectWS() {
             if (confirm(confirmText)) {
                 location.href = msg.url;
             }
-        }
-    };
-
-    ws.onclose = function () {
-        if (state.authed) {
-            setTimeout(connectWS, 2000);
         }
     };
 }
@@ -241,11 +193,6 @@ async function uploadBlob(blob, name) {
     await loadHistory();
 }
 
-async function uploadFile(file) {
-    if (!file) return;
-    await uploadBlob(file, file.name);
-}
-
 function bindEvents() {
     document.querySelectorAll('.tab').forEach((btn) => {
         btn.addEventListener('click', () => activateTab(btn.dataset.tab));
@@ -261,29 +208,12 @@ function bindEvents() {
     });
 
     $('file').addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
         try {
-            await uploadFile(e.target.files && e.target.files[0]);
+            await uploadBlob(file, file.name);
         } catch (err) {
             setHint('uploadStatus', err.message, true);
-        }
-    });
-
-    document.addEventListener('dragover', (e) => e.preventDefault());
-    document.addEventListener('drop', (e) => {
-        if (!state.authed) return;
-        e.preventDefault();
-        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-        if (!file) return;
-        uploadBlob(file, file.name).catch((err) => setHint('uploadStatus', err.message, true));
-    });
-
-    document.addEventListener('paste', (e) => {
-        if (!state.authed) return;
-        const items = e.clipboardData ? e.clipboardData.items : [];
-        for (const item of items) {
-            if (item.type && item.type.startsWith('image/')) {
-                uploadBlob(item.getAsFile(), 'clipboard.png').catch((err) => setHint('uploadStatus', err.message, true));
-            }
         }
     });
 
@@ -291,43 +221,32 @@ function bindEvents() {
         loadHistory().catch(() => {});
     });
 
-    $('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        setHint('loginError', '');
-        try {
-            await login($('loginPassword').value);
-            $('loginPassword').value = '';
-            await startProtectedArea();
-            toggleView(true);
-        } catch (err) {
-            setHint('loginError', err.message, true);
-        }
+    $('logoutBtn').addEventListener('click', async () => {
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+        location.replace('/login');
     });
 
-    $('logoutBtn').addEventListener('click', () => {
-        logout().catch(() => {});
+    document.addEventListener('dragover', (e) => e.preventDefault());
+    document.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (!file) return;
+        uploadBlob(file, file.name).catch((err) => setHint('uploadStatus', err.message, true));
     });
 }
 
-async function startProtectedArea() {
-    state.authed = true;
+async function init() {
+    await ensureAuth();
+    bindEvents();
+    setAddressAndQR();
     activateTab('send');
+
     await registerDevice();
     connectWS();
     await Promise.all([loadDevices(), loadHistory()]);
 }
 
-async function init() {
-    bindEvents();
-    setAddressAndQR();
-
-    await refreshAuthStatus();
-    if (state.authed) {
-        await startProtectedArea();
-    }
-}
-
 init().catch((err) => {
     console.error(err);
-    setHint('loginError', '初始化失败，请刷新页面重试', true);
+    setHint('textStatus', '初始化失败，请刷新重试', true);
 });

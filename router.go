@@ -7,10 +7,16 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 		w.Write([]byte("ok"))
 	})
 
-	mux.HandleFunc("/api/history", s.HistoryHandler)
-	mux.HandleFunc("/upload", s.UploadHandler)
-	mux.HandleFunc("/download/", s.DownloadHandler)
-	mux.HandleFunc("/api/device/register", s.DeviceRegisterHandler)
-	mux.HandleFunc("/api/devices", s.DevicesHandler)
-	mux.HandleFunc("/api/send/file", s.SendFileHandler)
+	mux.HandleFunc("/api/auth/status", s.AuthStatusHandler)
+	mux.HandleFunc("/api/auth/login", s.LoginHandler)
+	mux.HandleFunc("/api/auth/logout", s.LogoutHandler)
+	mux.HandleFunc("/api/config", s.ConfigHandler)
+	mux.HandleFunc("/api/qr", s.QRCodeHandler)
+
+	mux.HandleFunc("/api/history", s.requireAuth(s.HistoryHandler))
+	mux.HandleFunc("/upload", s.requireAuth(s.UploadHandler))
+	mux.HandleFunc("/download/", s.requireAuth(s.DownloadHandler))
+	mux.HandleFunc("/api/device/register", s.requireAuth(s.DeviceRegisterHandler))
+	mux.HandleFunc("/api/devices", s.requireAuth(s.DevicesHandler))
+	mux.HandleFunc("/api/send/file", s.requireAuth(s.SendFileHandler))
 }
