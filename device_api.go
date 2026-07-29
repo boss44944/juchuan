@@ -37,14 +37,22 @@ func (s *Server) DeviceRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		req.Role = "client"
 	}
 
-	s.devices.Add(&Device{
+	device := &Device{
 		ID:          req.ID,
 		DisplayName: req.DisplayName,
 		Role:        req.Role,
 		Platform:    req.Platform,
 		Browser:     req.Browser,
 		LastSeen:    time.Now().Unix(),
-	})
+	}
+
+	s.devices.Add(device)
+	if s.events != nil {
+		s.events.Publish(DeviceEvent{
+			Type: DeviceOnlineEvent,
+			Data: *device,
+		})
+	}
 
 	WriteJSON(w, http.StatusOK, APIResponse{
 		Success: true,
@@ -78,6 +86,13 @@ func (s *Server) DeviceHeartbeatHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	device.LastSeen = time.Now().Unix()
+
+	if s.events != nil {
+		s.events.Publish(DeviceEvent{
+			Type: DeviceOnlineEvent,
+			Data: *device,
+		})
+	}
 
 	WriteJSON(w, http.StatusOK, APIResponse{
 		Success: true,
