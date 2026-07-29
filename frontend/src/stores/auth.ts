@@ -4,6 +4,7 @@ import { authStatus, login, logout } from '../api/auth'
 
 export const useAuthStore = defineStore('auth', () => {
   const authenticated = ref(false)
+  const deviceId = ref('')
 
   async function check() {
     const res = await authStatus()
@@ -11,15 +12,19 @@ export const useAuthStore = defineStore('auth', () => {
     return authenticated.value
   }
 
-  async function signIn(password:string) {
-    await login(password)
+  async function signIn(password:string, id?: string) {
+    await login(password, id)
+    if (id) {
+      deviceId.value = id
+    }
     authenticated.value = true
   }
 
   async function signOut() {
     await logout()
     authenticated.value = false
+    deviceId.value = ''
   }
 
-  return { authenticated, check, signIn, signOut }
+  return { authenticated, deviceId, check, signIn, signOut }
 })
