@@ -26,6 +26,19 @@ const messages = {
       AUTH_PASSWORD_INVALID: 'Invalid password',
       FILE_TOO_LARGE: 'File is too large'
     }
+  },
+  'ja-JP': {
+    menu: {
+      home: 'ホーム',
+      history: '履歴',
+      devices: 'デバイス',
+      config: '設定',
+      exit: '終了'
+    },
+    error: {
+      AUTH_PASSWORD_INVALID: 'パスワードが正しくありません',
+      FILE_TOO_LARGE: 'ファイルサイズが大きすぎます'
+    }
   }
 }
 
