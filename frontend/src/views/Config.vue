@@ -14,12 +14,20 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
-import { updateConfig } from '../api'
+import { reactive, onMounted } from 'vue'
+import { getConfig, updateConfig } from '../api'
 
-const config = reactive<any>({port:8000, auto_open:false})
+const config = reactive<any>({
+  port: 8000,
+  auto_open: false,
+})
 
-async function save(){
+onMounted(async () => {
+  const res = await getConfig()
+  Object.assign(config, res.data)
+})
+
+async function save() {
   await updateConfig(config)
 }
 </script>
