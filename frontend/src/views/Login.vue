@@ -3,12 +3,12 @@
     <h2>{{ t('login.title') }}</h2>
     <el-form>
       <el-form-item>
-        <el-input v-model="deviceName" :placeholder="t('login.deviceName')" />
+        <el-input v-model="deviceId" :placeholder="t('login.deviceName')" />
       </el-form-item>
       <el-form-item>
         <el-input v-model="password" type="password" :placeholder="t('login.password')" />
       </el-form-item>
-      <el-button type="primary" @click="login">{{ t('login.submit') }}</el-button>
+      <el-button type="primary" @click="loginSubmit">{{ t('login.submit') }}</el-button>
     </el-form>
   </el-card>
 </template>
@@ -16,13 +16,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { login } from '../api'
 
 const { t } = useI18n()
-const deviceName = ref('')
+const deviceId = ref('')
 const password = ref('')
 
-function login() {
-  localStorage.setItem('device_name', deviceName.value)
+async function loginSubmit() {
+  const res = await login({
+    device_id: deviceId.value,
+    password: password.value,
+  })
+
+  localStorage.setItem('device_id', deviceId.value)
+  localStorage.setItem('session', JSON.stringify(res.data))
+  location.href = '/devices'
 }
 </script>
 
