@@ -13,17 +13,10 @@ func LoadDevices(db *sql.DB, manager *DeviceManager) error {
 
 	for rows.Next() {
 		d := &Device{}
-		if err := rows.Scan(
-			&d.ID,
-			&d.DisplayName,
-			&d.Role,
-			&d.Platform,
-			&d.Browser,
-			&d.DeviceSecret,
-			&d.LastSeen,
-		); err != nil {
+		if err := rows.Scan(&d.ID, &d.DisplayName, &d.Role, &d.Platform, &d.Browser, &d.DeviceSecret, &d.LastSeen); err != nil {
 			return err
 		}
+		d.Status = DeviceStatusOffline
 		manager.Add(d)
 	}
 
@@ -42,5 +35,15 @@ ON CONFLICT(id) DO UPDATE SET
  device_secret=excluded.device_secret,
  last_seen=excluded.last_seen
 `, d.ID, d.DisplayName, d.Role, d.Platform, d.Browser, d.DeviceSecret, d.LastSeen)
+	return err
+}
+
+func UpdateDeviceName(db *sql.DB, id string, name string) error {
+	_, err := db.Exec(`UPDATE devices SET display_name=? WHERE id=?`, name, id)
+	return err
+}
+
+func DeleteDevice(db *sql.DB, id string) error {
+	_, err := db.Exec(`DELETE FROM devices WHERE id=?`, id)
 	return err
 }
