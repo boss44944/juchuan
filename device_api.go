@@ -20,63 +20,51 @@ func (s *Server) DeviceRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
 		return
 	}
-
 	if req.ID == "" || req.DisplayName == "" {
 		WriteError(w, http.StatusBadRequest, "DEVICE_INFO_REQUIRED", nil)
 		return
 	}
-
 	if s.devices.NameExists(req.DisplayName) {
 		WriteError(w, http.StatusConflict, "DEVICE_NAME_EXISTS", map[string]interface{}{"name": req.DisplayName})
 		return
 	}
-
-	if req.Role == "" {
-		req.Role = "client"
-	}
-
-	device := &Device{
-		ID: req.ID,
-		DisplayName: req.DisplayName,
-		Role: req.Role,
-		Platform: req.Platform,
-		Browser: req.Browser,
-		LastSeen: time.Now().Unix(),
-		Status: DeviceStatusOnline,
-	}
-
+	if req.Role == "" { req.Role = "client" }
+	device := &Device{ID:req.ID, DisplayName:req.DisplayName, Role:req.Role, Platform:req.Platform, Browser:req.Browser, LastSeen:time.Now().Unix(), Status:DeviceStatusOnline}
 	s.devices.Add(device)
-	if s.events != nil {
-		s.events.Publish(DeviceEvent{Type: DeviceOnlineEvent, Data: *device})
-	}
-
-	WriteJSON(w, http.StatusOK, APIResponse{Success: true, Data: map[string]string{"device_id": req.ID}})
+	if s.events != nil { s.events.Publish(DeviceEvent{Type:DeviceOnlineEvent, Data:*device}) }
+	WriteJSON(w,http.StatusOK,APIResponse{Success:true,Data:map[string]string{"device_id":req.ID}})
 }
 
 func (s *Server) DevicesHandler(w http.ResponseWriter, r *http.Request) {
-	WriteJSON(w, http.StatusOK, APIResponse{Success: true, Data: s.devices.List()})
+	WriteJSON(w,http.StatusOK,APIResponse{Success:true,Data:s.devices.List()})
 }
 
 func (s *Server) DeviceHeartbeatHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct { ID string `json:"id"` }
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
-		return
-	}
+	if err:=json.NewDecoder(r.Body).Decode(&req); err!=nil { WriteError(w,http.StatusBadRequest,"INVALID_REQUEST",nil); return }
+	device,ok:=s.devices.Get(req.ID)
+	if !ok { WriteError(w,http.StatusNotFound,"DEVICE_NOT_FOUND",nil); return }
+	wasOffline:=device.Status==DeviceStatusOffline
+	device.LastSeen=time.Now().Unix()
+	device.Status=DeviceStatusOnline
+	if wasOffline && s.events!=nil { s.events.Publish(DeviceEvent{Type:DeviceOnlineEvent,Data:*device}) }
+	WriteJSON(w,http.StatusOK,APIResponse{Success:true})
+}
 
-	device, ok := s.devices.Get(req.ID)
-	if !ok {
-		WriteError(w, http.StatusNotFound, "DEVICE_NOT_FOUND", nil)
-		return
-	}
+func (s *Server) DeviceRenameHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct { ID string `json:"id"`; DisplayName string `json:"display_name"` }
+	if err:=json.NewDecoder(r.Body).Decode(&req); err!=nil { WriteError(w,http.StatusBadRequest,"INVALID_REQUEST",nil); return }
+	if req.DisplayName=="" { WriteError(w,http.StatusBadRequest,"DEVICE_NAME_REQUIRED",nil); return }
+	if s.devices.NameExists(req.DisplayName) { WriteError(w,http.StatusConflict,"DEVICE_NAME_EXISTS",map[string]interface{}{"name":req.DisplayName}); return }
+	device,ok:=s.devices.Get(req.ID)
+	if !ok { WriteError(w,http.StatusNotFound,"DEVICE_NOT_FOUND",nil); return }
+	device.DisplayName=req.DisplayName
+	WriteJSON(w,http.StatusOK,APIResponse{Success:true,Data:device})
+}
 
-	wasOffline := device.Status == DeviceStatusOffline
-	device.LastSeen = time.Now().Unix()
-	device.Status = DeviceStatusOnline
-
-	if wasOffline && s.events != nil {
-		s.events.Publish(DeviceEvent{Type: DeviceOnlineEvent, Data: *device})
-	}
-
-	WriteJSON(w, http.StatusOK, APIResponse{Success: true})
+func (s *Server) DeviceRemoveHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct { ID string `json:"id"` }
+	if err:=json.NewDecoder(r.Body).Decode(&req); err!=nil { WriteError(w,http.StatusBadRequest,"INVALID_REQUEST",nil); return }
+	if !s.devices.Remove(req.ID) { WriteError(w,http.StatusNotFound,"DEVICE_NOT_FOUND",nil); return }
+	WriteJSON(w,http.StatusOK,APIResponse{Success:true})
 }
