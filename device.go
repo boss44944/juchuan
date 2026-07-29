@@ -2,6 +2,11 @@ package main
 
 import "sync"
 
+const (
+	DeviceStatusOnline  = "online"
+	DeviceStatusOffline = "offline"
+)
+
 type Device struct {
 	ID           string `json:"id"`
 	DisplayName  string `json:"display_name"`
@@ -10,6 +15,7 @@ type Device struct {
 	Browser      string `json:"browser"`
 	DeviceSecret string `json:"device_secret,omitempty"`
 	LastSeen     int64  `json:"last_seen"`
+	Status       string `json:"status"`
 }
 
 type DeviceManager struct {
