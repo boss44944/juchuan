@@ -22,9 +22,7 @@ func InitDatabase(path string) (*sql.DB, error) {
  size INTEGER,
  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
  );`)
-	if err != nil {
-		return nil, err
-	}
+	if err != nil { return nil, err }
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS devices(
  id TEXT PRIMARY KEY,
@@ -35,9 +33,7 @@ func InitDatabase(path string) (*sql.DB, error) {
  device_secret TEXT,
  last_seen INTEGER
  );`)
-	if err != nil {
-		return nil, err
-	}
+	if err != nil { return nil, err }
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS messages(
  id TEXT PRIMARY KEY,
@@ -47,19 +43,26 @@ func InitDatabase(path string) (*sql.DB, error) {
  sender_device_id TEXT,
  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
  );`)
-	if err != nil {
-		return nil, err
-	}
+	if err != nil { return nil, err }
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS message_targets(
  message_id TEXT NOT NULL,
  device_id TEXT NOT NULL,
  status TEXT NOT NULL,
+ updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
  PRIMARY KEY(message_id, device_id)
  );`)
-	if err != nil {
-		return nil, err
-	}
+	if err != nil { return nil, err }
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS files(
+ id TEXT PRIMARY KEY,
+ filename TEXT,
+ path TEXT,
+ mime TEXT,
+ size INTEGER,
+ created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+ );`)
+	if err != nil { return nil, err }
 
 	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS idx_history_created_at ON history(created_at DESC);`)
 	return db, err
