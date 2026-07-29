@@ -12,11 +12,12 @@ export const useAuthStore = defineStore('auth', () => {
     return authenticated.value
   }
 
-  async function signIn(password:string, id?: string) {
-    await login(password, id)
-    if (id) {
-      deviceId.value = id
-    }
+  async function signIn(id: string, password?: string) {
+    await login({
+      device_id: id,
+      password
+    })
+    deviceId.value = id
     authenticated.value = true
   }
 
