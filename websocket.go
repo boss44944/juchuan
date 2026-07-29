@@ -10,10 +10,11 @@ import (
 )
 
 type WSMessage struct {
-	Type     string `json:"type"`
-	Content  string `json:"content,omitempty"`
-	URL      string `json:"url,omitempty"`
-	Filename string `json:"filename,omitempty"`
+	Type     string      `json:"type"`
+	Data     interface{} `json:"data,omitempty"`
+	Content  string      `json:"content,omitempty"`
+	URL      string      `json:"url,omitempty"`
+	Filename string      `json:"filename,omitempty"`
 }
 
 type Hub struct {
@@ -36,6 +37,13 @@ func (h *Hub) Broadcast(v WSMessage) {
 	for _, c := range h.clients {
 		_ = c.WriteMessage(websocket.TextMessage, b)
 	}
+}
+
+func (h *Hub) BroadcastEvent(event DeviceEvent) {
+	h.Broadcast(WSMessage{
+		Type: event.Type,
+		Data: event.Data,
+	})
 }
 
 func (h *Hub) SendTo(deviceID string, v WSMessage) error {
