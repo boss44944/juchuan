@@ -16,6 +16,7 @@ type Server struct {
 	addr       string
 	static     embed.FS
 	hub        *Hub
+	events     *EventBus
 	storage    *Storage
 	db         *sql.DB
 	clipboard  *Clipboard
@@ -53,28 +54,36 @@ func NewServer() (*Server, error) {
 		return nil, err
 	}
 
-	startPort := cfg.Port
-	if startPort <= 0 {
-		startPort = 8000
-	}
-	port := FindAvailablePort(startPort)
+	hub := NewHub()
+	events := NewEventBus()
+	events.Subscribe(func(data []byte) {
+		var event DeviceEvent
+		if err := json.Unmarshal(data, &event); err == nil {
+			hub.BroadcastEvent(event)
+		}
+	})
 
-	return &Server{
-		addr:      fmt.Sprintf(":%d", port),
+	server := &Server{
+		addr:      fmt.Sprintf(":%d", FindAvailablePort(cfg.Port)),
 		static:    StaticFiles,
-		hub:       NewHub(),
+		hub:       hub,
+		events:    events,
 		storage:   storage,
 		db:        db,
 		clipboard: &Clipboard{},
 		devices:   devices,
 		config:    cfg,
 		sessions:  make(map[string]time.Time),
-	}, nil
+	}
+
+	StartDeviceMonitor(devices, func(event DeviceEvent) {
+		events.Publish(event)
+	})
+
+	return server, nil
 }
 
-func (s *Server) Address() string {
-	return s.addr
-}
+func (s *Server) Address() string { return s.addr }
 
 func (s *Server) ShouldAutoOpen() bool {
 	s.configMu.RLock()
@@ -85,18 +94,13 @@ func (s *Server) ShouldAutoOpen() bool {
 func (s *Server) HasPassword() bool {
 	s.configMu.RLock()
 	defer s.configMu.RUnlock()
-	if s.config == nil {
-		return false
-	}
-	return strings.TrimSpace(s.config.Password) != ""
+	return s.config != nil && strings.TrimSpace(s.config.Password) != ""
 }
 
 func (s *Server) CurrentPassword() string {
 	s.configMu.RLock()
 	defer s.configMu.RUnlock()
-	if s.config == nil {
-		return ""
-	}
+	if s.config == nil { return "" }
 	return s.config.Password
 }
 
@@ -106,37 +110,19 @@ func (s *Server) Start() error {
 
 	staticFS, _ := fs.Sub(s.static, "static")
 	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/login" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Cache-Control", "no-store")
 		http.ServeFileFS(w, r, staticFS, "login.html")
 	})
 	mux.HandleFunc("/app", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/app" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Cache-Control", "no-store")
 		http.ServeFileFS(w, r, staticFS, "app.html")
 	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
 		if s.HasPassword() && !s.isAuthenticated(r) {
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 		http.Redirect(w, r, "/app", http.StatusFound)
 	})
-	staticHandler := http.StripPrefix("/static/", http.FileServer(http.FS(staticFS)))
-	mux.Handle("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-store")
-		staticHandler.ServeHTTP(w, r)
-	}))
+	mux.Handle("/static/", http.FileServer(http.FS(staticFS)))
 	mux.HandleFunc("/ws", s.requireAuth(s.hub.Handler))
 	mux.HandleFunc("/api/text", s.requireAuth(s.TextHandler))
 
@@ -145,14 +131,8 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Shutdown() error {
-	if s.httpServer == nil {
-		return nil
-	}
-	if err := s.httpServer.Shutdown(context.Background()); err != nil {
-		return err
-	}
-	if s.db != nil {
-		return s.db.Close()
-	}
+	if s.httpServer == nil { return nil }
+	if err := s.httpServer.Shutdown(context.Background()); err != nil { return err }
+	if s.db != nil { return s.db.Close() }
 	return nil
 }
