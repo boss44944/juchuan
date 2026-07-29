@@ -1,7 +1,8 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '/api'
+  baseURL: '/api',
+  withCredentials: true,
 })
 
 export interface LoginRequest {
@@ -9,6 +10,14 @@ export interface LoginRequest {
   password?: string
 }
 
+export function authStatus() {
+  return api.get('/auth/status')
+}
+
 export function login(data: LoginRequest) {
   return api.post('/auth/login', data)
+}
+
+export function logout() {
+  return api.post('/auth/logout')
 }

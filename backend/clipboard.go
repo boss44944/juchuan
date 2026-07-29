@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os/exec"
 	"runtime"
 )
@@ -17,7 +16,7 @@ func (c *Clipboard) Copy(text string) error {
 }
 
 func (c *Clipboard) String() string {
-	return fmt.Sprint("system clipboard")
+	return "system clipboard"
 }
 
 func SetClipboard(text string) error {

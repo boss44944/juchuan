@@ -24,5 +24,8 @@ func ListHistory(db *sql.DB, page, size int) ([]History, error) {
 		}
 		result = append(result, h)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return result, nil
 }

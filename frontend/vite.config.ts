@@ -9,9 +9,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:8080',
-      '/ws': 'ws://localhost:8080',
-      '/upload': 'http://localhost:8080'
+      '/api': 'http://localhost:8000',
+      '/ws': 'ws://localhost:8000',
+      '/upload': 'http://localhost:8000'
     }
   }
 })

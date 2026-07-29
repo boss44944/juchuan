@@ -9,28 +9,46 @@
         <el-input v-model="password" type="password" :placeholder="t('login.password')" />
       </el-form-item>
       <el-button type="primary" @click="loginSubmit">{{ t('login.submit') }}</el-button>
+      <el-alert v-if="error" :title="error" type="error" :closable="false" style="margin-top: 12px;" />
     </el-form>
   </el-card>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { login } from '../api'
+import { useAuthStore } from '../stores/auth'
+import { registerDevice, resolveApiErrorMessage } from '../api'
 
+const router = useRouter()
 const { t } = useI18n()
+const authStore = useAuthStore()
 const deviceId = ref('')
 const password = ref('')
+const error = ref('')
 
 async function loginSubmit() {
-  const res = await login({
-    device_id: deviceId.value,
-    password: password.value,
-  })
+  const id = deviceId.value.trim()
+  if (!id) {
+    error.value = t('login.deviceNameRequired')
+    return
+  }
 
-  localStorage.setItem('device_id', deviceId.value)
-  localStorage.setItem('session', JSON.stringify(res.data))
-  location.href = '/devices'
+  try {
+    error.value = ''
+    await authStore.signIn(id, password.value)
+    await registerDevice({
+      id,
+      display_name: id,
+      role: 'client',
+      platform: navigator.platform,
+      browser: navigator.userAgent,
+    })
+    await router.replace('/devices')
+  } catch (err) {
+    error.value = resolveApiErrorMessage(err, 'login.failed')
+  }
 }
 </script>
 

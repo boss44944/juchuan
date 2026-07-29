@@ -252,6 +252,55 @@ juchuan.exe
  文件系统          SQLite
 ```
 
+当前仓库采用前后端分离目录：
+
+```
+juchuan/
+  backend/   # Go 服务端
+  frontend/  # Vue3 + Vite 前端
+  static/    # 兼容旧版静态页面
+```
+
+---
+
+# 本地开发
+
+## 启动后端
+
+```bash
+cd backend
+go run .
+```
+
+## 构建后端
+
+```bash
+cd backend
+go build ./...
+```
+
+## 启动前端开发服务
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+前端开发代理默认转发到 `http://localhost:8000`。
+
+## 前端构建并由 Go 服务托管
+
+```bash
+cd frontend
+npm run build
+
+cd ../backend
+go run .
+```
+
+构建后，Go 服务优先托管 `frontend/dist`；如果 dist 不存在，会回退到 `static/` 兼容页面。
+
 ---
 
 # 技术栈

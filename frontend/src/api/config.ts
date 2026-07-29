@@ -1,7 +1,8 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '/api'
+  baseURL: '/api',
+  withCredentials: true,
 })
 
 export function getConfig(){
@@ -11,3 +12,5 @@ export function getConfig(){
 export function saveConfig(data:any){
   return api.post('/config', data)
 }
+
+export const updateConfig = saveConfig

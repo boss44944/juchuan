@@ -8,6 +8,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	})
 
 	mux.HandleFunc("/api/system/info", SystemInfoHandler)
+	mux.HandleFunc("/api/text", s.requireAuth(s.TextHandler))
 	mux.HandleFunc("/api/auth/status", s.AuthStatusHandler)
 	mux.HandleFunc("/api/auth/login", s.LoginHandler)
 	mux.HandleFunc("/api/auth/logout", s.LogoutHandler)
@@ -22,8 +23,12 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 
 	mux.HandleFunc("/api/device/register", s.requireAuth(s.DeviceRegisterHandler))
 	mux.HandleFunc("/api/device/heartbeat", s.requireAuth(s.DeviceHeartbeatHandler))
+	mux.HandleFunc("/api/device/rename", s.requireAuth(s.DeviceRenameHandler))
+	mux.HandleFunc("/api/device/remove", s.requireAuth(s.DeviceRemoveHandler))
 	mux.HandleFunc("/api/devices", s.requireAuth(s.DevicesHandler))
 	mux.HandleFunc("/api/send/file", s.requireAuth(s.SendFileHandler))
+	mux.HandleFunc("/api/message/text", s.requireAuth(s.SendTextMessageHandler))
 	mux.HandleFunc("/api/message/file", s.requireAuth(s.SendFileMessageHandler))
+	mux.HandleFunc("/api/messages", s.requireAuth(s.MessagesHandler))
 	mux.HandleFunc("/api/message/status", s.requireAuth(s.MessageStatusHandler))
 }

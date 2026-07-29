@@ -2,23 +2,23 @@
   <el-card>
     <h2>{{ t('menu.config') }}</h2>
     <el-form>
-      <el-form-item label="服务端口">
+      <el-form-item :label="t('configPage.labels.port')">
         <el-input v-model="config.port" />
       </el-form-item>
-      <el-form-item label="自动打开">
+      <el-form-item :label="t('configPage.labels.autoOpen')">
         <el-switch v-model="config.auto_open" />
       </el-form-item>
-      <el-form-item label="访问密码">
+      <el-form-item :label="t('configPage.labels.password')">
         <el-input v-model="config.password" type="password" show-password />
       </el-form-item>
-      <el-form-item label="语言">
+      <el-form-item :label="t('configPage.labels.language')">
         <el-select v-model="config.language">
-          <el-option label="中文" value="zh-CN" />
-          <el-option label="English" value="en-US" />
-          <el-option label="日本語" value="ja-JP" />
+          <el-option :label="t('configPage.languages.zhCN')" value="zh-CN" />
+          <el-option :label="t('configPage.languages.enUS')" value="en-US" />
+          <el-option :label="t('configPage.languages.jaJP')" value="ja-JP" />
         </el-select>
       </el-form-item>
-      <el-button @click="save">保存</el-button>
+      <el-button @click="save">{{ t('configPage.save') }}</el-button>
     </el-form>
   </el-card>
 </template>
@@ -26,7 +26,8 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { getConfig, updateConfig } from '../api'
+import { ElMessage } from 'element-plus'
+import { getConfig, resolveApiErrorMessage, updateConfig } from '../api'
 
 const { t } = useI18n()
 
@@ -38,11 +39,24 @@ const config = reactive<any>({
 })
 
 onMounted(async () => {
-  const res = await getConfig()
-  Object.assign(config, res.data)
+  try {
+    const res = await getConfig()
+    Object.assign(config, res.data)
+  } catch (err) {
+    ElMessage.error(resolveApiErrorMessage(err))
+  }
 })
 
 async function save() {
-  await updateConfig(config)
+  try {
+    await updateConfig({
+      port: Number(config.port),
+      auto_open: !!config.auto_open,
+      password: config.password,
+    })
+    ElMessage.success(t('configPage.saved'))
+  } catch (err) {
+    ElMessage.error(resolveApiErrorMessage(err))
+  }
 }
 </script>

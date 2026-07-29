@@ -13,7 +13,8 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function load() {
     const res = await getDevices()
-    setDevices(res.data.data || [])
+    const payload = Array.isArray(res.data) ? res.data : (res.data.data || [])
+    setDevices(payload)
   }
 
   function setCurrent(device: DeviceIdentity) {
@@ -21,7 +22,7 @@ export const useDeviceStore = defineStore('device', () => {
   }
 
   function setDevices(list: DeviceIdentity[]) {
-    devices.value = list
+    devices.value = [...list].sort(sortByOnline)
   }
 
   function addDevice(device: DeviceIdentity) {
@@ -31,6 +32,7 @@ export const useDeviceStore = defineStore('device', () => {
     } else {
       devices.value.push(device)
     }
+    devices.value.sort(sortByOnline)
   }
 
   function removeDevice(id: string) {
@@ -46,8 +48,18 @@ export const useDeviceStore = defineStore('device', () => {
       const device = devices.value.find(d => d.id === event.data.id)
       if (device) {
         device.status = 'offline'
+        devices.value.sort(sortByOnline)
       }
     }
+  }
+
+  function sortByOnline(a: DeviceIdentity, b: DeviceIdentity) {
+    const as = a.status === 'online' ? 1 : 0
+    const bs = b.status === 'online' ? 1 : 0
+    if (as !== bs) {
+      return bs - as
+    }
+    return a.display_name.localeCompare(b.display_name)
   }
 
   return {
