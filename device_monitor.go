@@ -10,11 +10,14 @@ func StartDeviceMonitor(manager *DeviceManager, notify func(DeviceEvent)) {
 		for range ticker.C {
 			now := time.Now().Unix()
 			for _, device := range manager.List() {
-				if now-device.LastSeen > 120 {
-					notify(DeviceEvent{
-						Type: DeviceOfflineEvent,
-						Data: *device,
-					})
+				if now-device.LastSeen > 120 && device.Status != DeviceStatusOffline {
+					device.Status = DeviceStatusOffline
+					if notify != nil {
+						notify(DeviceEvent{
+							Type: DeviceOfflineEvent,
+							Data: *device,
+						})
+					}
 				}
 			}
 		}
