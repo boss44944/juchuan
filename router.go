@@ -23,4 +23,5 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/device/heartbeat", s.requireAuth(s.DeviceHeartbeatHandler))
 	mux.HandleFunc("/api/devices", s.requireAuth(s.DevicesHandler))
 	mux.HandleFunc("/api/send/file", s.requireAuth(s.SendFileHandler))
+	mux.HandleFunc("/api/message/file", s.requireAuth(s.SendFileMessageHandler))
 }
