@@ -19,7 +19,7 @@ type Device struct {
 }
 
 type DeviceManager struct {
-	mu      sync.Mutex
+	mu sync.Mutex
 	devices map[string]*Device
 }
 
@@ -38,6 +38,16 @@ func (m *DeviceManager) Get(id string) (*Device, bool) {
 	defer m.mu.Unlock()
 	d, ok := m.devices[id]
 	return d, ok
+}
+
+func (m *DeviceManager) Remove(id string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.devices[id]; !ok {
+		return false
+	}
+	delete(m.devices, id)
+	return true
 }
 
 func (m *DeviceManager) List() []*Device {
