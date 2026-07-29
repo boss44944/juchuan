@@ -27,9 +27,7 @@ func (s *Server) DeviceRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if s.devices.NameExists(req.DisplayName) {
-		WriteError(w, http.StatusConflict, "DEVICE_NAME_EXISTS", map[string]interface{}{
-			"name": req.DisplayName,
-		})
+		WriteError(w, http.StatusConflict, "DEVICE_NAME_EXISTS", map[string]interface{}{"name": req.DisplayName})
 		return
 	}
 
@@ -38,42 +36,29 @@ func (s *Server) DeviceRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	device := &Device{
-		ID:          req.ID,
+		ID: req.ID,
 		DisplayName: req.DisplayName,
-		Role:        req.Role,
-		Platform:    req.Platform,
-		Browser:     req.Browser,
-		LastSeen:    time.Now().Unix(),
+		Role: req.Role,
+		Platform: req.Platform,
+		Browser: req.Browser,
+		LastSeen: time.Now().Unix(),
+		Status: DeviceStatusOnline,
 	}
 
 	s.devices.Add(device)
 	if s.events != nil {
-		s.events.Publish(DeviceEvent{
-			Type: DeviceOnlineEvent,
-			Data: *device,
-		})
+		s.events.Publish(DeviceEvent{Type: DeviceOnlineEvent, Data: *device})
 	}
 
-	WriteJSON(w, http.StatusOK, APIResponse{
-		Success: true,
-		Data: map[string]string{
-			"device_id": req.ID,
-		},
-	})
+	WriteJSON(w, http.StatusOK, APIResponse{Success: true, Data: map[string]string{"device_id": req.ID}})
 }
 
 func (s *Server) DevicesHandler(w http.ResponseWriter, r *http.Request) {
-	WriteJSON(w, http.StatusOK, APIResponse{
-		Success: true,
-		Data:    s.devices.List(),
-	})
+	WriteJSON(w, http.StatusOK, APIResponse{Success: true, Data: s.devices.List()})
 }
 
 func (s *Server) DeviceHeartbeatHandler(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		ID string `json:"id"`
-	}
-
+	var req struct { ID string `json:"id"` }
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
 		return
@@ -85,16 +70,13 @@ func (s *Server) DeviceHeartbeatHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	wasOffline := device.Status == DeviceStatusOffline
 	device.LastSeen = time.Now().Unix()
+	device.Status = DeviceStatusOnline
 
-	if s.events != nil {
-		s.events.Publish(DeviceEvent{
-			Type: DeviceOnlineEvent,
-			Data: *device,
-		})
+	if wasOffline && s.events != nil {
+		s.events.Publish(DeviceEvent{Type: DeviceOnlineEvent, Data: *device})
 	}
 
-	WriteJSON(w, http.StatusOK, APIResponse{
-		Success: true,
-	})
+	WriteJSON(w, http.StatusOK, APIResponse{Success: true})
 }
