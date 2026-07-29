@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { DeviceIdentity } from '../types/device'
+import { getDevices } from '../api'
 
 export const useDeviceStore = defineStore('device', () => {
   const devices = ref<DeviceIdentity[]>([])
@@ -9,6 +10,11 @@ export const useDeviceStore = defineStore('device', () => {
     id: '',
     display_name: ''
   })
+
+  async function load() {
+    const res = await getDevices()
+    setDevices(res.data.data || [])
+  }
 
   function setCurrent(device: DeviceIdentity) {
     current.value = device
@@ -31,12 +37,27 @@ export const useDeviceStore = defineStore('device', () => {
     devices.value = devices.value.filter(d => d.id !== id)
   }
 
+  function handleEvent(event: any) {
+    if (event.type === 'DEVICE_ONLINE') {
+      addDevice(event.data)
+    }
+
+    if (event.type === 'DEVICE_OFFLINE') {
+      const device = devices.value.find(d => d.id === event.data.id)
+      if (device) {
+        device.status = 'offline'
+      }
+    }
+  }
+
   return {
     devices,
     current,
+    load,
     setCurrent,
     setDevices,
     addDevice,
-    removeDevice
+    removeDevice,
+    handleEvent
   }
 })
