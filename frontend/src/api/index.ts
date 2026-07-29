@@ -27,4 +27,16 @@ export function updateMessageStatus(data: any) {
   return api.post('/message/status', data)
 }
 
+export function login(data: any) {
+  return api.post('/auth/login', data)
+}
+
+export function getConfig() {
+  return api.get('/config')
+}
+
+export function updateConfig(data: any) {
+  return api.post('/config', data)
+}
+
 export default api
