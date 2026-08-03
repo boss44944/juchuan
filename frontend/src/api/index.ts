@@ -192,4 +192,13 @@ export function updateConfig(data: {
   return api.post('/config', data)
 }
 
+export function qrCodeURL(urlText?: string) {
+  const params = new URLSearchParams()
+  if (urlText && urlText.trim() !== '') {
+    params.set('url', urlText.trim())
+  }
+  params.set('t', String(Date.now()))
+  return `/api/qr?${params.toString()}`
+}
+
 export default api

@@ -16,6 +16,12 @@ import (
 	"time"
 )
 
+func setNoCacheHeaders(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
+}
+
 type Server struct {
 	configMu sync.RWMutex
 	config   *Config
@@ -155,13 +161,26 @@ func (s *Server) registerWebRoutes(mux *http.ServeMux) {
 		return
 	}
 
-	staticHandler := http.StripPrefix("/static/", http.FileServer(http.FS(staticFS)))
+	staticHandler := http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		setNoCacheHeaders(w)
+		http.FileServer(http.FS(staticFS)).ServeHTTP(w, r)
+	}))
 	mux.Handle("/static/", staticHandler)
 
 	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		if s.serveFrontendDist(w, r) {
+			return
+		}
 		s.serveEmbeddedStaticFile(w, r, staticFS, "login.html")
 	})
 	mux.HandleFunc("/app", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			return
+		}
+		if s.serveFrontendDist(w, r) {
+			return
+		}
 		s.serveEmbeddedStaticFile(w, r, staticFS, "app.html")
 	})
 
@@ -186,6 +205,8 @@ func (s *Server) serveEmbeddedStaticFile(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
+	setNoCacheHeaders(w)
+
 	switch filepath.Ext(name) {
 	case ".html":
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -205,6 +226,7 @@ func (s *Server) serveFrontendDist(w http.ResponseWriter, r *http.Request) bool 
 	}
 
 	if strings.HasPrefix(r.URL.Path, "/assets/") {
+		setNoCacheHeaders(w)
 		http.FileServer(http.Dir(distRoot)).ServeHTTP(w, r)
 		return true
 	}
@@ -215,6 +237,7 @@ func (s *Server) serveFrontendDist(w http.ResponseWriter, r *http.Request) bool 
 		strings.HasPrefix(r.URL.Path, "/send") ||
 		strings.HasPrefix(r.URL.Path, "/config") ||
 		strings.HasPrefix(r.URL.Path, "/login") {
+		setNoCacheHeaders(w)
 		http.ServeFile(w, r, filepath.Join(distRoot, "index.html"))
 		return true
 	}
@@ -222,6 +245,7 @@ func (s *Server) serveFrontendDist(w http.ResponseWriter, r *http.Request) bool 
 	full := filepath.Clean(filepath.Join(distRoot, strings.TrimPrefix(r.URL.Path, "/")))
 	if strings.HasPrefix(full, distRoot) {
 		if _, err := os.Stat(full); err == nil {
+			setNoCacheHeaders(w)
 			http.ServeFile(w, r, full)
 			return true
 		}

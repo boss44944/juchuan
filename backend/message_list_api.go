@@ -90,12 +90,12 @@ WHERE ` + whereSQL
 SELECT
   m.id,
   m.type,
-  m.content,
-  m.file_id,
-  m.sender_device_id,
+	COALESCE(m.content, ''),
+	COALESCE(m.file_id, ''),
+	COALESCE(m.sender_device_id, ''),
   COALESCE(mt.device_id, ''),
   COALESCE(mt.status, 'CREATED'),
-  m.created_at
+	COALESCE(m.created_at, '')
 FROM messages m
 LEFT JOIN message_targets mt ON mt.message_id=m.id
 WHERE ` + whereSQL + `

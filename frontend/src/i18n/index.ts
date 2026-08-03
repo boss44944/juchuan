@@ -1,5 +1,7 @@
 import { createI18n } from 'vue-i18n'
 
+const localeFromStorage = localStorage.getItem('juchuan_locale') || 'zh-CN'
+
 const messages = {
   'zh-CN': {
     menu: {
@@ -9,13 +11,16 @@ const messages = {
       messages: '消息',
       send: '发送',
       config: '配置',
-      exit: '退出程序'
+      exit: '退出程序',
+      logout: '登出'
     },
     login: {
       title: '登录',
       deviceName: '设备名称',
       password: '访问密码',
       submit: '进入',
+      qrTip: '手机扫码即可访问',
+      qrAlt: '登录二维码',
       deviceNameRequired: '请输入设备名称',
       failed: '登录失败，请检查密码'
     },
@@ -43,7 +48,11 @@ const messages = {
       toast: {
         renamed: '设备名称已更新',
         removed: '设备已删除'
-      }
+      },
+      entryTitle: '访问地址',
+      copyAddress: '复制地址',
+      copySuccess: '地址已复制',
+      qrAlt: '访问二维码'
     },
     send: {
       title: '发送',
@@ -157,13 +166,16 @@ const messages = {
       messages: 'Messages',
       send: 'Send',
       config: 'Settings',
-      exit: 'Exit'
+      exit: 'Exit',
+      logout: 'Logout'
     },
     login: {
       title: 'Sign In',
       deviceName: 'Device Name',
       password: 'Access Password',
       submit: 'Enter',
+      qrTip: 'Scan with mobile device to access',
+      qrAlt: 'Login QR code',
       deviceNameRequired: 'Please enter a device name',
       failed: 'Login failed, please check password'
     },
@@ -191,7 +203,11 @@ const messages = {
       toast: {
         renamed: 'Device name updated',
         removed: 'Device deleted'
-      }
+      },
+      entryTitle: 'Access URL',
+      copyAddress: 'Copy URL',
+      copySuccess: 'URL copied',
+      qrAlt: 'Access QR code'
     },
     send: {
       title: 'Send',
@@ -305,13 +321,16 @@ const messages = {
       messages: 'メッセージ',
       send: '送信',
       config: '設定',
-      exit: '終了'
+      exit: '終了',
+      logout: 'ログアウト'
     },
     login: {
       title: 'ログイン',
       deviceName: 'デバイス名',
       password: 'アクセスパスワード',
       submit: '入る',
+      qrTip: 'モバイルでスキャンしてアクセス',
+      qrAlt: 'ログインQRコード',
       deviceNameRequired: 'デバイス名を入力してください',
       failed: 'ログインに失敗しました。パスワードを確認してください'
     },
@@ -339,7 +358,11 @@ const messages = {
       toast: {
         renamed: 'デバイス名を更新しました',
         removed: 'デバイスを削除しました'
-      }
+      },
+      entryTitle: 'アクセスURL',
+      copyAddress: 'URLをコピー',
+      copySuccess: 'URLをコピーしました',
+      qrAlt: 'アクセスQRコード'
     },
     send: {
       title: '送信',
@@ -449,7 +472,7 @@ const messages = {
 
 export default createI18n({
   legacy: false,
-  locale: 'zh-CN',
+  locale: localeFromStorage,
   fallbackLocale: 'en-US',
   messages
 })

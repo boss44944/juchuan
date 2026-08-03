@@ -1,7 +1,13 @@
 <template>
-  <el-card>
-    <h2>{{ t('menu.config') }}</h2>
-    <el-form>
+  <section class="view-panel config-view">
+    <header class="panel-header">
+      <div>
+        <h2 class="panel-title">{{ t('menu.config') }}</h2>
+        <p class="panel-subtitle">NODE RUNTIME CONTROL</p>
+      </div>
+    </header>
+
+    <el-form label-position="top" class="config-form">
       <el-form-item :label="t('configPage.labels.port')">
         <el-input v-model="config.port" />
       </el-form-item>
@@ -12,15 +18,15 @@
         <el-input v-model="config.password" type="password" show-password />
       </el-form-item>
       <el-form-item :label="t('configPage.labels.language')">
-        <el-select v-model="config.language">
+        <el-select v-model="config.language" class="lang-select">
           <el-option :label="t('configPage.languages.zhCN')" value="zh-CN" />
           <el-option :label="t('configPage.languages.enUS')" value="en-US" />
           <el-option :label="t('configPage.languages.jaJP')" value="ja-JP" />
         </el-select>
       </el-form-item>
-      <el-button @click="save">{{ t('configPage.save') }}</el-button>
+      <el-button type="primary" class="save-btn" @click="save">{{ t('configPage.save') }}</el-button>
     </el-form>
-  </el-card>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -60,3 +66,17 @@ async function save() {
   }
 }
 </script>
+
+<style scoped>
+.config-form {
+  max-width: 620px;
+}
+
+.lang-select {
+  width: 100%;
+}
+
+.save-btn {
+  min-width: 180px;
+}
+</style>

@@ -1,6 +1,14 @@
 <template>
-  <el-card>
-    <el-space wrap>
+  <section class="view-panel messages-view">
+    <header class="panel-header">
+      <div>
+        <h2 class="panel-title">{{ t('menu.messages') }}</h2>
+        <p class="panel-subtitle">DELIVERY TELEMETRY STREAM</p>
+      </div>
+      <span class="stat-chip"><strong>{{ total }}</strong>{{ t('messagesPage.table.content') }}</span>
+    </header>
+
+    <el-space wrap class="filters-row">
       <el-select v-model="query.type" style="width: 160px" @change="refresh(1)">
         <el-option :label="t('messagesPage.filters.typeAll')" value="" />
         <el-option :label="t('messagesPage.filters.typeText')" value="TEXT" />
@@ -36,51 +44,53 @@
       <el-button :disabled="selectedRows.length === 0" @click="retryBatch">{{ t('messagesPage.actions.batchRetry') }}</el-button>
     </el-space>
 
-    <el-table
-      v-loading="loading"
-      :data="messages"
-      row-key="row_key"
-      :row-class-name="rowClassName"
-      style="margin-top: 16px"
-      @selection-change="onSelectionChange"
-    >
-      <el-table-column type="selection" width="44" />
-      <el-table-column :label="t('messagesPage.table.time')" width="180">
-        <template #default="scope">
-          {{ formatTime(scope.row.created_at) }}
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('messagesPage.table.type')" width="100">
-        <template #default="scope">
-          {{ typeLabel(scope.row.type) }}
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('messagesPage.table.content')">
-        <template #default="scope">
-          <span v-if="scope.row.type === 'TEXT'">{{ scope.row.content }}</span>
-          <a v-else :href="fileURL(scope.row)">{{ t('messagesPage.table.download') }}</a>
-        </template>
-      </el-table-column>
-      <el-table-column prop="sender_device_id" :label="t('messagesPage.table.sender')" width="140" />
-      <el-table-column prop="target_device_id" :label="t('messagesPage.table.target')" width="140" />
-      <el-table-column :label="t('messagesPage.table.status')" width="140">
-        <template #default="scope">
-          <el-tag :type="statusType(scope.row.status)">{{ statusLabel(scope.row.status) }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('messagesPage.table.operation')" width="220">
-        <template #default="scope">
-          <el-button
-            v-if="scope.row.status !== 'READ' && canMarkRead(scope.row)"
-            size="small"
-            @click="markRead(scope.row)"
-          >
-            {{ t('messagesPage.actions.markRead') }}
-          </el-button>
-          <el-button size="small" @click="retry(scope.row)">{{ t('messagesPage.actions.retry') }}</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="table-scroll">
+      <el-table
+        v-loading="loading"
+        :data="messages"
+        row-key="row_key"
+        :row-class-name="rowClassName"
+        style="margin-top: 16px"
+        @selection-change="onSelectionChange"
+      >
+        <el-table-column type="selection" width="44" />
+        <el-table-column :label="t('messagesPage.table.time')" width="180">
+          <template #default="scope">
+            {{ formatTime(scope.row.created_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('messagesPage.table.type')" width="100">
+          <template #default="scope">
+            {{ typeLabel(scope.row.type) }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('messagesPage.table.content')">
+          <template #default="scope">
+            <span v-if="scope.row.type === 'TEXT'">{{ scope.row.content }}</span>
+            <a v-else :href="fileURL(scope.row)">{{ t('messagesPage.table.download') }}</a>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sender_device_id" :label="t('messagesPage.table.sender')" width="140" />
+        <el-table-column prop="target_device_id" :label="t('messagesPage.table.target')" width="140" />
+        <el-table-column :label="t('messagesPage.table.status')" width="140">
+          <template #default="scope">
+            <el-tag :type="statusType(scope.row.status)">{{ statusLabel(scope.row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('messagesPage.table.operation')" width="220">
+          <template #default="scope">
+            <el-button
+              v-if="scope.row.status !== 'READ' && canMarkRead(scope.row)"
+              size="small"
+              @click="markRead(scope.row)"
+            >
+              {{ t('messagesPage.actions.markRead') }}
+            </el-button>
+            <el-button size="small" @click="retry(scope.row)">{{ t('messagesPage.actions.retry') }}</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <el-pagination
       style="margin-top: 16px"
@@ -90,7 +100,7 @@
       :page-size="query.size"
       @current-change="refresh"
     />
-  </el-card>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -360,6 +370,20 @@ function flashHighlight(rowKey: string) {
 
 <style scoped>
 :deep(.row-highlight > td) {
-  background: #fff3d6 !important;
+  background: rgba(255, 202, 113, 0.2) !important;
+}
+
+.filters-row {
+  margin-bottom: 6px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+@media (max-width: 860px) {
+  .table-scroll :deep(.el-table) {
+    min-width: 980px;
+  }
 }
 </style>
