@@ -8,9 +8,16 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "latest",
+    "@lucide/vue": "^1.28.0",
+    "@tailwindcss/vite": "^4.3.3",
     "axios": "latest",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "element-plus": "latest",
     "pinia": "latest",
+    "reka-ui": "^2.10.1",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.3",
     "vue": "latest",
     "vue-i18n": "latest",
     "vue-router": "latest"

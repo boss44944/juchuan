@@ -1,0 +1,15 @@
+{
+  "$schema": "https://lidaixingchen.github.io/brutxui-vue3/schema.json",
+  "$version": 1,
+  "style": "brutalism",
+  "tailwind": {
+    "config": "",
+    "css": "src/index.css"
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "composables": "@/composables"
+  },
+  "sharedBase": "@/components/brutx/shared"
+}
