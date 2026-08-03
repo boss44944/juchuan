@@ -1,47 +1,51 @@
 <template>
-  <section class="login-wrap">
-    <el-card class="login-card" shadow="never">
-      <div class="login-stack">
-        <header class="login-head">
-          <img class="login-logo" src="/app-logo.png" alt="Juchuan Logo" />
-          <div class="login-brand-block" aria-label="juchuan 菊传">
-            <div class="login-brand-line">
-              <p class="login-kicker">JuChuan</p>
-              <span class="login-brand-char">菊</span>
-            </div>
-            <div class="login-brand-line login-brand-line--second">
-              <span class="login-brand-char">传</span>
-            </div>
+  <section class="login-wrap theme-juchuan">
+    <Card padding="lg" class="login-card">
+      <header class="login-head">
+        <img class="login-logo" src="/app-logo.png" alt="Juchuan Logo" />
+        <div>
+          <p>JUCHUAN / LOCAL ONLY</p>
+          <h1>菊传</h1>
+        </div>
+      </header>
+
+      <div class="login-grid">
+        <section class="qr-panel">
+          <p>{{ t('login.qrTip') }}</p>
+          <div class="login-qr-wrap">
+            <img :src="qrImage" :alt="t('login.qrAlt')" class="login-qr" />
           </div>
-        </header>
+        </section>
 
-        <p class="login-sub">{{ t('login.qrTip') }}</p>
-
-        <div class="login-qr-wrap">
-          <img :src="qrImage" :alt="t('login.qrAlt')" class="login-qr" />
-        </div>
-
-        <el-select v-model="language" size="default" class="login-lang-switch" @change="changeLanguage">
-          <el-option :label="t('configPage.languages.zhCN')" value="zh-CN" />
-          <el-option :label="t('configPage.languages.enUS')" value="en-US" />
-          <el-option :label="t('configPage.languages.jaJP')" value="ja-JP" />
-        </el-select>
-
-        <div class="login-form-zone">
+        <form class="login-form" @submit.prevent="loginSubmit">
           <h2>{{ t('login.title') }}</h2>
-          <el-form @submit.prevent>
-            <el-form-item>
-              <el-input v-model="deviceId" :placeholder="t('login.deviceName')" />
-            </el-form-item>
-            <el-form-item>
-              <el-input v-model="password" type="password" :placeholder="t('login.password')" show-password />
-            </el-form-item>
-            <el-button type="primary" class="login-submit" @click="loginSubmit">{{ t('login.submit') }}</el-button>
-            <el-alert v-if="error" :title="error" type="error" :closable="false" style="margin-top: 12px;" />
-          </el-form>
-        </div>
+          <label class="field-label">
+            {{ t('configPage.labels.language') }}
+            <select v-model="language" class="brutal-select" @change="changeLanguage(language)">
+              <option value="zh-CN">{{ t('configPage.languages.zhCN') }}</option>
+              <option value="en-US">{{ t('configPage.languages.enUS') }}</option>
+              <option value="ja-JP">{{ t('configPage.languages.jaJP') }}</option>
+            </select>
+          </label>
+          <label class="field-label">
+            {{ t('login.deviceName') }}
+            <Input v-model="deviceId" size="lg" :placeholder="t('login.deviceName')" :aria-label="t('login.deviceName')" />
+          </label>
+          <label class="field-label">
+            {{ t('login.password') }}
+            <Input v-model="password" type="password" show-password size="lg" :placeholder="t('login.password')" :aria-label="t('login.password')" />
+          </label>
+          <div v-if="error" class="login-alert" role="alert">
+            <CircleAlert :size="20" :stroke-width="3" aria-hidden="true" />
+            {{ error }}
+          </div>
+          <Button type="submit" variant="primary" size="lg" class="login-submit">
+            <LogIn :size="20" aria-hidden="true" />
+            {{ t('login.submit') }}
+          </Button>
+        </form>
       </div>
-    </el-card>
+    </Card>
   </section>
 </template>
 
@@ -49,6 +53,10 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { CircleAlert, LogIn } from '@lucide/vue'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { useAuthStore } from '../stores/auth'
 import { qrCodeURL, registerDevice, resolveApiErrorMessage } from '../api'
 
@@ -74,7 +82,6 @@ async function loginSubmit() {
     error.value = t('login.deviceNameRequired')
     return
   }
-
   try {
     error.value = ''
     await authStore.signIn(id, password.value)
@@ -93,178 +100,24 @@ async function loginSubmit() {
 </script>
 
 <style scoped>
-.login-wrap {
-  width: min(420px, 92vw);
-}
+.login-wrap { width: min(860px, 94vw); }
+.login-card { overflow: hidden; }
+.login-head { display: flex; align-items: center; gap: 14px; padding-bottom: 18px; border-bottom: 3px solid var(--brutal-border-color); }
+.login-logo { width: 64px; height: 64px; object-fit: cover; border: 3px solid var(--brutal-border-color); border-radius: 6px; box-shadow: 4px 4px 0 var(--brutal-shadow-color); }
+.login-head p { margin: 0 0 3px; color: #9a4b1e; font-size: 10px; font-weight: 900; letter-spacing: .16em; }
+.login-head h1 { margin: 0; font-size: 34px; line-height: 1; }
+.login-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 28px; padding-top: 24px; }
+.qr-panel { display: grid; align-content: start; gap: 12px; }
+.qr-panel p { margin: 0; color: var(--brutal-muted-foreground); font-weight: 700; }
+.login-qr-wrap { display: grid; place-items: center; padding: 18px; border: 3px solid var(--brutal-border-color); border-radius: 7px; background: #fff; box-shadow: 5px 5px 0 var(--brutal-shadow-color); }
+.login-qr { width: min(240px, 100%); aspect-ratio: 1; background: #fff; padding: 8px; }
+.login-form { display: grid; align-content: start; gap: 16px; }
+.login-form h2 { margin: 0; font-size: 29px; }
+.login-alert { display: flex; align-items: center; gap: 9px; padding: 11px 12px; border: 3px solid var(--brutal-border-color); border-radius: 6px; background: #f2b3aa; font-weight: 800; }
+.login-submit { width: 100%; margin-top: 4px; }
 
-.login-card {
-  overflow: hidden;
-  border-radius: 16px;
-}
-
-.login-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 20px;
-}
-
-.login-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.login-logo {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 221, 162, 0.58);
-  box-shadow: 0 0 0 4px rgba(239, 176, 78, 0.18);
-}
-
-.login-brand-block {
-  margin-left: auto;
-  display: inline-flex;
-  flex-direction: column;
-}
-
-.login-brand-line {
-  display: flex;
-  align-items: baseline;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.login-brand-line--second {
-  margin-top: 2px;
-}
-
-.login-kicker {
-  margin: 0;
-  font-size: 30px;
-  letter-spacing: 0.08em;
-  color: #d7be8f;
-  text-transform: lowercase;
-}
-
-.login-brand-char {
-  display: inline-block;
-  font-size: 32px;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  color: #fff2d7;
-}
-
-.login-sub {
-  margin: 0;
-  color: #e2cfaa;
-  font-size: 13px;
-  text-align: center;
-}
-
-.login-qr-wrap {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  border: 1px solid rgba(239, 176, 78, 0.25);
-  border-radius: 12px;
-  background: rgba(20, 16, 12, 0.45);
-}
-
-.login-qr-wrap::before {
-  content: '';
-  position: absolute;
-  inset: -36px;
-  border-radius: 50%;
-  pointer-events: none;
-  background: repeating-conic-gradient(
-    from 0deg,
-    rgba(255, 212, 116, 0.28) 0deg 9deg,
-    rgba(189, 104, 31, 0.1) 9deg 18deg
-  );
-  mask-image: radial-gradient(circle at center, transparent 39%, rgba(0, 0, 0, 0.96) 52%, transparent 64%);
-  opacity: 0.8;
-}
-
-.login-qr-wrap::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at center, transparent 54%, rgba(255, 229, 169, 0.16) 60%, transparent 72%),
-    repeating-linear-gradient(14deg, rgba(255, 211, 116, 0.06) 0 1px, transparent 1px 8px);
-}
-
-.login-qr {
-  position: relative;
-  z-index: 1;
-  width: 220px;
-  height: 220px;
-  border-radius: 8px;
-  border: 1px solid rgba(223, 169, 73, 0.5);
-  background:
-    radial-gradient(circle at 22% 20%, rgba(255, 248, 230, 0.9), transparent 44%),
-    repeating-linear-gradient(16deg, rgba(222, 187, 121, 0.08) 0 1px, rgba(0, 0, 0, 0) 1px 7px),
-    #fff5e3;
-  box-shadow:
-    0 6px 14px rgba(35, 19, 8, 0.26),
-    inset 0 0 0 1px rgba(255, 236, 196, 0.7);
-  padding: 8px;
-}
-
-.login-form-zone {
-  padding-top: 2px;
-}
-
-.login-form-zone h2 {
-  margin: 0 0 12px;
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.login-lang-switch {
-  width: 100%;
-}
-
-.login-submit {
-  width: 100%;
-  margin-top: 6px;
-}
-
-@media (max-width: 860px) {
-  .login-wrap {
-    width: min(100%, 430px);
-  }
-
-  .login-stack {
-    padding: 16px;
-    gap: 12px;
-  }
-
-  .login-logo {
-    width: 56px;
-    height: 56px;
-  }
-
-  .login-brand-line {
-    gap: 10px;
-  }
-
-  .login-brand-char {
-    font-size: 28px;
-  }
-
-  .login-qr {
-    width: 180px;
-    height: 180px;
-  }
+@media (max-width: 680px) {
+  .login-grid { grid-template-columns: 1fr; gap: 22px; }
+  .login-qr { width: 190px; }
 }
 </style>

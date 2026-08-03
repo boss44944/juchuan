@@ -1,66 +1,60 @@
 <template>
-  <div class="app-root">
-    <div class="orb orb--left" />
-    <div class="orb orb--right" />
-
+  <div class="app-root theme-juchuan">
+    <ToastHost />
     <main v-if="isLoginRoute" class="login-stage">
       <router-view />
     </main>
 
-    <el-container v-else class="shell">
-      <el-aside class="shell__aside" width="260px">
+    <div v-else class="shell">
+      <aside class="shell__aside">
         <section class="brand-card">
-          <div class="brand-head">
-            <img class="brand-logo" src="/app-logo.png" alt="Juchuan Logo" />
-            <div>
-              <div class="brand-card__label">Juchuan</div>
-              <h2 class="brand-card__title">菊传</h2>
-            </div>
+          <img class="brand-logo" src="/app-logo.png" alt="Juchuan Logo" />
+          <div>
+            <p>JUCHUAN</p>
+            <strong>菊传</strong>
           </div>
-          <p class="brand-card__hint">Secure Transfer Workspace</p>
         </section>
 
-        <el-menu class="nav-menu" router :default-active="route.path">
-          <el-menu-item index="/devices">
-            <el-icon class="menu-icon"><Monitor /></el-icon>
-            <span class="menu-label">{{ t('menu.devices') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/messages">
-            <el-icon class="menu-icon"><ChatLineRound /></el-icon>
-            <span class="menu-label">{{ t('menu.messages') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/send">
-            <el-icon class="menu-icon"><Promotion /></el-icon>
-            <span class="menu-label">{{ t('menu.send') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/config">
-            <el-icon class="menu-icon"><Setting /></el-icon>
-            <span class="menu-label">{{ t('menu.config') }}</span>
-          </el-menu-item>
-        </el-menu>
-      </el-aside>
+        <nav class="nav-menu" :aria-label="t('menu.home')">
+          <router-link v-for="item in navigation" :key="item.to" :to="item.to" class="nav-item">
+            <component :is="item.icon" :size="21" :stroke-width="2.8" aria-hidden="true" />
+            <span>{{ item.label }}</span>
+          </router-link>
+        </nav>
 
-      <el-main class="shell__main">
+        <div class="aside-note">
+          <span class="aside-note__dot" />
+          <span>LOCAL ONLY</span>
+        </div>
+      </aside>
+
+      <main class="shell__main">
         <header class="topbar">
           <div>
-            <h1 class="topbar__title">{{ activeTitle }}</h1>
-            <p class="topbar__path">{{ route.path }}</p>
+            <p class="topbar__eyebrow">JUCHUAN / {{ route.path.slice(1).toUpperCase() }}</p>
+            <h1>{{ activeTitle }}</h1>
           </div>
           <div class="topbar-actions">
-            <el-select v-model="language" size="small" class="lang-switch" @change="changeLanguage">
-              <el-option label="中文" value="zh-CN" />
-              <el-option label="English" value="en-US" />
-              <el-option label="日本語" value="ja-JP" />
-            </el-select>
-            <el-button size="small" @click="handleLogout">{{ t('menu.logout') }}</el-button>
-            <div class="topbar__badge">Enterprise Console</div>
+            <label class="select-field select-field--compact">
+              <Languages :size="17" aria-hidden="true" />
+              <span class="visually-hidden">Language</span>
+              <select v-model="language" @change="changeLanguage(language)">
+                <option value="zh-CN">中文</option>
+                <option value="en-US">English</option>
+                <option value="ja-JP">日本語</option>
+              </select>
+            </label>
+            <Button variant="outline" size="sm" @click="handleLogout">
+              <LogOut :size="17" aria-hidden="true" />
+              {{ t('menu.logout') }}
+            </Button>
           </div>
         </header>
         <section class="content-stage">
           <router-view />
         </section>
-      </el-main>
-    </el-container>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -68,16 +62,19 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ChatLineRound, Monitor, Promotion, Setting } from '@element-plus/icons-vue'
+import { Languages, LogOut, MessageSquareText, Monitor, Send, Settings } from '@lucide/vue'
+import { Button } from '@/components/ui/button'
+import ToastHost from '@/components/app/ToastHost.vue'
+import { useToast } from '@/composables/useToast'
 import { useDeviceStore } from './stores/device'
 import { useMessageStore } from './stores/message'
 import { useAuthStore } from './stores/auth'
 import { heartbeatDevice, registerDevice } from './api'
 import { connectWebSocket, onWebSocketMessage } from './websocket/client'
-import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const { t, locale } = useI18n()
+const toast = useToast()
 const deviceStore = useDeviceStore()
 const messageStore = useMessageStore()
 const authStore = useAuthStore()
@@ -86,6 +83,12 @@ let heartbeatTimer: number | null = null
 const language = ref(String(locale.value || 'zh-CN'))
 
 const isLoginRoute = computed(() => route.path === '/login')
+const navigation = computed(() => [
+  { to: '/devices', label: t('menu.devices'), icon: Monitor },
+  { to: '/messages', label: t('menu.messages'), icon: MessageSquareText },
+  { to: '/send', label: t('menu.send'), icon: Send },
+  { to: '/config', label: t('menu.config'), icon: Settings },
+])
 
 const activeTitle = computed(() => {
   if (route.path.startsWith('/devices')) return t('menu.devices')
@@ -98,10 +101,7 @@ const activeTitle = computed(() => {
 watch(
   () => route.path,
   async (path) => {
-    if (path === '/login') {
-      return
-    }
-
+    if (path === '/login') return
     await deviceStore.load()
     const id = (localStorage.getItem('device_id') || '').trim()
     if (id) {
@@ -112,14 +112,10 @@ watch(
         platform: navigator.platform,
         browser: navigator.userAgent,
       })
-
       if (heartbeatTimer == null) {
-        heartbeatTimer = window.setInterval(() => {
-          void heartbeatDevice(id)
-        }, 30000)
+        heartbeatTimer = window.setInterval(() => void heartbeatDevice(id), 30000)
       }
     }
-
     if (!wsBound) {
       onWebSocketMessage((event) => {
         deviceStore.handleEvent(event)
@@ -141,347 +137,56 @@ function changeLanguage(value: string) {
 async function handleLogout() {
   try {
     await authStore.signOut()
-    if (heartbeatTimer != null) {
-      window.clearInterval(heartbeatTimer)
-      heartbeatTimer = null
-    }
+    if (heartbeatTimer != null) window.clearInterval(heartbeatTimer)
+    heartbeatTimer = null
     window.location.href = '/login'
   } catch {
-    ElMessage.error(t('error.UNKNOWN'))
+    toast.error(t('error.UNKNOWN'))
   }
 }
 </script>
 
 <style scoped>
-.app-root {
-  position: relative;
-  min-height: 100vh;
-  padding: 14px;
-  overflow: hidden;
+.app-root { min-height: 100vh; padding: 18px; }
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: calc(100vh - 36px); border: 3px solid var(--brutal-border-color); border-radius: 10px; background: var(--brutal-bg); box-shadow: 8px 8px 0 var(--brutal-shadow-color); overflow: hidden; }
+.shell__aside { display: flex; flex-direction: column; gap: 20px; padding: 18px; border-right: 3px solid var(--brutal-border-color); background: #f3b63f; }
+.brand-card { display: flex; align-items: center; gap: 12px; padding: 12px; border: 3px solid var(--brutal-border-color); border-radius: 7px; background: #fff8e7; box-shadow: 4px 4px 0 var(--brutal-shadow-color); }
+.brand-logo { width: 46px; height: 46px; object-fit: cover; border: 2px solid var(--brutal-border-color); border-radius: 5px; }
+.brand-card p { margin: 0 0 2px; color: #9a4b1e; font-size: 10px; font-weight: 900; letter-spacing: .15em; }
+.brand-card strong { font-size: 23px; line-height: 1; }
+.nav-menu { display: grid; gap: 10px; }
+.nav-item { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 10px 12px; border: 3px solid transparent; border-radius: 6px; color: var(--brutal-fg); font-weight: 900; text-decoration: none; transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease; }
+.nav-item:hover { border-color: var(--brutal-border-color); background: #fff0bd; transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--brutal-shadow-color); }
+.nav-item.router-link-active { border-color: var(--brutal-border-color); background: #fff8e7; box-shadow: 4px 4px 0 var(--brutal-shadow-color); }
+.nav-item:focus-visible { outline: 3px solid var(--brutal-ring); outline-offset: 2px; }
+.aside-note { display: flex; align-items: center; gap: 8px; margin-top: auto; font-size: 10px; font-weight: 900; letter-spacing: .16em; }
+.aside-note__dot { width: 10px; height: 10px; border: 2px solid var(--brutal-border-color); border-radius: 50%; background: #86a95b; }
+.shell__main { min-width: 0; padding: 22px; background: #fff8e7; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-bottom: 18px; border-bottom: 3px solid var(--brutal-border-color); }
+.topbar h1 { margin: 0; font-size: clamp(28px, 3vw, 42px); line-height: 1; font-weight: 950; letter-spacing: -.035em; }
+.topbar__eyebrow { margin: 0 0 7px; color: #9a4b1e; font-size: 10px; font-weight: 900; letter-spacing: .16em; }
+.topbar-actions { display: flex; align-items: center; gap: 12px; }
+.content-stage { padding-top: 24px; }
+.login-stage { display: grid; min-height: calc(100vh - 36px); place-items: center; }
+
+@media (max-width: 780px) {
+  .app-root { padding: 10px 10px calc(88px + env(safe-area-inset-bottom)); }
+  .shell { display: block; min-height: calc(100vh - 20px); overflow: visible; }
+  .shell__aside { position: fixed; z-index: 50; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; display: block; padding: 8px; border: 3px solid var(--brutal-border-color); border-radius: 8px; box-shadow: 5px 5px 0 var(--brutal-shadow-color); }
+  .brand-card, .aside-note { display: none; }
+  .nav-menu { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .nav-item { flex-direction: column; gap: 2px; min-height: 52px; padding: 5px 2px; font-size: 10px; }
+  .nav-item:hover { transform: none; box-shadow: none; }
+  .nav-item.router-link-active { box-shadow: 2px 2px 0 var(--brutal-shadow-color); }
+  .shell__main { padding: 16px; }
+  .topbar { align-items: flex-start; }
+  .topbar-actions { flex-direction: column; align-items: stretch; }
+  .topbar-actions :deep(button) { font-size: 0; min-width: 42px; padding-inline: 10px; }
+  .content-stage { padding-top: 18px; }
 }
 
-.app-root::before {
-  content: '';
-  position: fixed;
-  right: -120px;
-  top: -88px;
-  width: 420px;
-  height: 420px;
-  pointer-events: none;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at center, rgba(109, 60, 26, 0.7) 0 20%, rgba(255, 197, 79, 0.22) 21% 60%, transparent 61%),
-    conic-gradient(from 0deg, rgba(255, 205, 94, 0.62), rgba(232, 138, 35, 0.38), rgba(255, 198, 71, 0.62), rgba(214, 110, 29, 0.4), rgba(255, 205, 94, 0.62));
-  filter: blur(2px);
-  opacity: 0.3;
-}
-
-.app-root::after {
-  content: '';
-  position: fixed;
-  left: -140px;
-  bottom: -120px;
-  width: 430px;
-  height: 430px;
-  border-radius: 50%;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at center, rgba(100, 55, 24, 0.55) 0 22%, rgba(251, 190, 72, 0.18) 23% 58%, transparent 59%),
-    conic-gradient(from 160deg, rgba(250, 201, 84, 0.48), rgba(198, 101, 28, 0.28), rgba(255, 205, 94, 0.52), rgba(250, 161, 48, 0.3), rgba(250, 201, 84, 0.48));
-  opacity: 0.22;
-}
-
-.orb {
-  position: fixed;
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
-  filter: blur(40px);
-  pointer-events: none;
-  opacity: 0.2;
-}
-
-.orb--left {
-  left: -120px;
-  top: 48px;
-  background: radial-gradient(circle at center, rgba(255, 197, 83, 0.72), transparent 72%);
-}
-
-.orb--right {
-  right: -110px;
-  top: 26%;
-  background: radial-gradient(circle at center, rgba(227, 121, 33, 0.7), transparent 70%);
-}
-
-.shell {
-  position: relative;
-  z-index: 1;
-  min-height: calc(100vh - 28px);
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(240, 174, 58, 0.26);
-  background:
-    linear-gradient(155deg, rgba(88, 49, 23, 0.28), rgba(39, 22, 12, 0.4)),
-    repeating-linear-gradient(16deg, rgba(255, 202, 84, 0.02) 0 2px, rgba(0, 0, 0, 0) 2px 9px);
-  backdrop-filter: blur(4px);
-}
-
-.shell__aside {
-  padding: 12px;
-  border-right: 1px solid rgba(239, 176, 78, 0.24);
-  background: linear-gradient(180deg, rgba(87, 48, 21, 0.36), rgba(41, 24, 13, 0.32));
-}
-
-.shell__main {
-  padding: 14px;
-}
-
-.brand-card {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(248, 187, 78, 0.28);
-  border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 10px;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(251, 200, 95, 0.14), transparent 38%),
-    linear-gradient(135deg, rgba(106, 59, 28, 0.26), rgba(42, 24, 14, 0.36));
-}
-
-.brand-card::before {
-  content: '';
-  position: absolute;
-  right: -32px;
-  top: -26px;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at center, rgba(110, 59, 23, 0.66) 0 18%, transparent 19%),
-    repeating-conic-gradient(
-      from 0deg,
-      rgba(255, 217, 130, 0.24) 0deg 8deg,
-      rgba(172, 92, 31, 0.1) 8deg 16deg
-    );
-  opacity: 0.52;
-  filter: blur(0.4px);
-}
-
-.brand-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(circle at 79% 24%, rgba(255, 227, 160, 0.18), transparent 35%),
-    repeating-linear-gradient(22deg, rgba(255, 213, 118, 0.05) 0 2px, transparent 2px 11px);
-  opacity: 0.5;
-}
-
-.brand-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  object-fit: cover;
-  border: 1px solid rgba(255, 216, 150, 0.56);
-  box-shadow: 0 0 0 3px rgba(239, 176, 78, 0.18);
-}
-
-.brand-card__label {
-  font-size: 12px;
-  letter-spacing: 0.03em;
-  color: #d5b57b;
-}
-
-.brand-card__title {
-  margin: 6px 0 2px;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  color: #ffe6aa;
-}
-
-.brand-card__hint {
-  margin: 0;
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  color: #e0c48e;
-}
-
-.nav-menu {
-  border-right: none;
-  background: transparent;
-}
-
-.nav-menu :deep(.el-menu-item) {
-  margin-bottom: 4px;
-  border-radius: 8px;
-  color: #f4d595;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.menu-icon {
-  font-size: 16px;
-}
-
-.menu-label {
-  font-size: 14px;
-}
-
-.nav-menu :deep(.el-menu-item.is-active) {
-  color: #fff6d8;
-  background: linear-gradient(120deg, rgba(229, 146, 37, 0.5), rgba(253, 198, 80, 0.34));
-  box-shadow: inset 0 0 0 1px rgba(245, 188, 82, 0.5);
-}
-
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.lang-switch {
-  width: 112px;
-}
-
-.topbar__title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-}
-
-.topbar__path {
-  margin: 6px 0 0;
-  color: #e4c98f;
-  font-size: 12px;
-}
-
-.topbar__badge {
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 204, 102, 0.55);
-  color: #ffdf9b;
-  background: rgba(117, 67, 26, 0.12);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-}
-
-.content-stage {
-  animation: panel-in 420ms ease-out both;
-}
-
-.login-stage {
-  position: relative;
-  min-height: calc(100vh - 36px);
-  display: grid;
-  place-items: center;
-}
-
-@keyframes panel-in {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 1024px) {
-  .app-root {
-    padding: 8px;
-  }
-
-  .shell {
-    min-height: calc(100vh - 16px);
-  }
-
-  .topbar {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .topbar-actions {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-}
-
-@media (max-width: 860px) {
-  .shell {
-    display: block;
-    padding-bottom: 58px;
-  }
-
-  .shell__aside {
-    position: fixed;
-    z-index: 20;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
-    width: auto !important;
-    border-right: 1px solid rgba(239, 176, 78, 0.24);
-    border-bottom: none;
-    border-radius: 8px;
-    background: rgba(54, 32, 16, 0.46);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.24);
-    padding: 8px;
-  }
-
-  .brand-card {
-    display: none;
-  }
-
-  .nav-menu {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 4px;
-  }
-
-  .nav-menu :deep(.el-menu-item) {
-    margin: 0;
-    justify-content: center;
-    flex-direction: column;
-    min-width: 0;
-    padding: 0 4px;
-    height: 46px;
-    gap: 2px;
-    line-height: 1;
-  }
-
-  .menu-icon {
-    font-size: 15px;
-  }
-
-  .menu-label {
-    font-size: 11px;
-  }
-
-  .shell__main {
-    padding: 12px;
-  }
-
-  .topbar__title {
-    font-size: 24px;
-  }
+@media (max-width: 440px) {
+  .topbar__eyebrow { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+  .topbar h1 { font-size: 28px; }
 }
 </style>

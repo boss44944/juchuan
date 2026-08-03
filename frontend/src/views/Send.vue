@@ -127,17 +127,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
 import { Check, File as FileIcon, FileUp, MessageSquareText, Send as SendIcon, Upload, Wifi, WifiOff } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/composables/useToast'
 import { useDeviceStore } from '../stores/device'
 import { useMessageStore, type MessageItem } from '../stores/message'
 import { resolveApiErrorMessage, sendFileMessage, sendTextMessage, uploadFile } from '../api'
 
 const { t } = useI18n()
+const toast = useToast()
 const store = useDeviceStore()
 const messageStore = useMessageStore()
 const devices = computed(() => store.devices)
@@ -155,7 +156,7 @@ onMounted(async () => {
     await store.load()
   } catch (err) {
     loadFailed.value = true
-    ElMessage.error(resolveApiErrorMessage(err))
+    toast.error(resolveApiErrorMessage(err))
   } finally {
     loadingDevices.value = false
   }
@@ -196,11 +197,11 @@ function extractMessage(responseData: unknown): MessageItem | null {
 
 async function sendText() {
   if (!content.value.trim()) {
-    ElMessage.warning(t('send.toast.textRequired'))
+    toast.warning(t('send.toast.textRequired'))
     return
   }
   if (targets.value.length === 0) {
-    ElMessage.warning(t('send.toast.targetRequired'))
+    toast.warning(t('send.toast.targetRequired'))
     return
   }
 
@@ -215,9 +216,9 @@ async function sendText() {
     const message = extractMessage(response.data)
     if (message) messageStore.addMessage(message)
     content.value = ''
-    ElMessage.success(t('send.toast.textSent'))
+    toast.success(t('send.toast.textSent'))
   } catch (err) {
-    ElMessage.error(resolveApiErrorMessage(err))
+    toast.error(resolveApiErrorMessage(err))
   } finally {
     sendingText.value = false
   }
@@ -225,11 +226,11 @@ async function sendText() {
 
 async function sendFile() {
   if (!file.value) {
-    ElMessage.warning(t('send.toast.fileRequired'))
+    toast.warning(t('send.toast.fileRequired'))
     return
   }
   if (targets.value.length === 0) {
-    ElMessage.warning(t('send.toast.targetRequired'))
+    toast.warning(t('send.toast.targetRequired'))
     return
   }
 
@@ -249,9 +250,9 @@ async function sendFile() {
     if (message) messageStore.addMessage(message)
     file.value = null
     if (fileInput.value) fileInput.value.value = ''
-    ElMessage.success(t('send.toast.fileSent'))
+    toast.success(t('send.toast.fileSent'))
   } catch (err) {
-    ElMessage.error(resolveApiErrorMessage(err))
+    toast.error(resolveApiErrorMessage(err))
   } finally {
     sendingFile.value = false
   }
