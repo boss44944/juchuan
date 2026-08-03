@@ -5,15 +5,16 @@ import Send from '../views/Send.vue'
 import Config from '../views/Config.vue'
 import Login from '../views/Login.vue'
 import { authStatus } from '../api'
+import { isServerAccess } from '../utils/role'
 
 const router = createRouter({
   history:createWebHistory(),
   routes:[
     {path:'/login', component:Login, meta: { public: true }},
-    {path:'/devices', component:Devices},
-    {path:'/messages', component:Messages},
+    {path:'/devices', component:Devices, meta: { serverOnly: true }},
+    {path:'/messages', component:Messages, meta: { serverOnly: true }},
     {path:'/send', component:Send},
-    {path:'/config', component:Config},
+    {path:'/config', component:Config, meta: { serverOnly: true }},
     {path:'/', redirect:'/devices'}
   ]
 })
@@ -26,14 +27,20 @@ router.beforeEach(async (to) => {
   try {
     const res = await authStatus()
     const ok = !res.data.requires_password || res.data.authenticated
-    if (ok) {
-      return true
+    if (!ok) {
+      return '/login'
     }
   } catch {
     // Ignore and force login below.
+    return '/login'
   }
 
-  return '/login'
+  // 客户端（手机）只能访问「发送」页；服务端管理页一律重定向
+  if (to.meta.serverOnly && !isServerAccess()) {
+    return '/send'
+  }
+
+  return true
 })
 
 export default router

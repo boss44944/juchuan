@@ -6,12 +6,15 @@
         <h2 id="send-page-title">{{ t('menu.send') }}</h2>
         <p class="send-subtitle">{{ t('send.subtitle') }}</p>
       </div>
-      <Badge variant="accent" size="sm" class="selection-count">
+      <Badge v-if="isServer" variant="accent" size="sm" class="selection-count">
         {{ t('send.selectedCount', { selected: targets.length, total: devices.length }) }}
+      </Badge>
+      <Badge v-else variant="accent" size="sm" class="selection-count">
+        {{ t('send.clientTarget') }}
       </Badge>
     </header>
 
-    <section class="target-panel" aria-labelledby="target-panel-title">
+    <section v-if="isServer" class="target-panel" aria-labelledby="target-panel-title">
       <div class="section-heading">
         <div>
           <h3 id="target-panel-title">{{ t('send.selectTargets') }}</h3>
@@ -53,6 +56,20 @@
             {{ t(`devices.status.${device.status === 'online' ? 'online' : 'offline'}`) }}
           </Badge>
         </label>
+      </div>
+    </section>
+
+    <section v-else class="target-panel" aria-labelledby="target-panel-title">
+      <div class="section-heading">
+        <div>
+          <h3 id="target-panel-title">{{ t('send.clientTitle') }}</h3>
+          <p>{{ t('send.clientHint') }}</p>
+        </div>
+        <span class="step-marker" aria-hidden="true">01</span>
+      </div>
+      <div class="client-target-note">
+        <Monitor :size="24" :stroke-width="2.6" aria-hidden="true" />
+        <span>{{ t('send.clientDesc') }}</span>
       </div>
     </section>
 
@@ -127,7 +144,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Check, File as FileIcon, FileUp, MessageSquareText, Send as SendIcon, Upload, Wifi, WifiOff } from '@lucide/vue'
+import { Check, File as FileIcon, FileUp, MessageSquareText, Monitor, Send as SendIcon, Upload, Wifi, WifiOff } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardTitle } from '@/components/ui/card'
@@ -136,11 +153,13 @@ import { useToast } from '@/composables/useToast'
 import { useDeviceStore } from '../stores/device'
 import { useMessageStore, type MessageItem } from '../stores/message'
 import { resolveApiErrorMessage, sendFileMessage, sendTextMessage, uploadFile } from '../api'
+import { isServerAccess } from '../utils/role'
 
 const { t } = useI18n()
 const toast = useToast()
 const store = useDeviceStore()
 const messageStore = useMessageStore()
+const isServer = isServerAccess()
 const devices = computed(() => store.devices)
 const targets = ref<string[]>([])
 const content = ref('')
@@ -152,6 +171,8 @@ const sendingText = ref(false)
 const sendingFile = ref(false)
 
 onMounted(async () => {
+  // 客户端（手机）：无需加载设备列表，直接发给电脑服务端
+  if (!isServer) return
   try {
     await store.load()
   } catch (err) {
@@ -200,7 +221,9 @@ async function sendText() {
     toast.warning(t('send.toast.textRequired'))
     return
   }
-  if (targets.value.length === 0) {
+  // 客户端（手机）固定发送给电脑服务端；服务端则发往所选设备
+  const targetList = isServer ? targets.value : ['server']
+  if (targetList.length === 0) {
     toast.warning(t('send.toast.targetRequired'))
     return
   }
@@ -211,7 +234,7 @@ async function sendText() {
     const response = await sendTextMessage({
       content: content.value,
       sender_device_id: senderID,
-      targets: targets.value,
+      targets: targetList,
     })
     const message = extractMessage(response.data)
     if (message) messageStore.addMessage(message)
@@ -229,7 +252,8 @@ async function sendFile() {
     toast.warning(t('send.toast.fileRequired'))
     return
   }
-  if (targets.value.length === 0) {
+  const targetList = isServer ? targets.value : ['server']
+  if (targetList.length === 0) {
     toast.warning(t('send.toast.targetRequired'))
     return
   }
@@ -244,7 +268,7 @@ async function sendFile() {
     const response = await sendFileMessage({
       file_id: fileId,
       sender_device_id: senderID,
-      targets: targets.value,
+      targets: targetList,
     })
     const message = extractMessage(response.data)
     if (message) messageStore.addMessage(message)
@@ -361,6 +385,19 @@ async function sendFile() {
   font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.08em;
+}
+
+.client-target-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 3px solid var(--brutal-border-color);
+  border-radius: var(--brutal-radius);
+  background: #fff8e7;
+  box-shadow: 4px 4px 0 var(--brutal-shadow-color);
+  font-weight: 800;
 }
 
 .target-grid {

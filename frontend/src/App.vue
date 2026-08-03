@@ -71,6 +71,7 @@ import { useMessageStore } from './stores/message'
 import { useAuthStore } from './stores/auth'
 import { heartbeatDevice, registerDevice } from './api'
 import { connectWebSocket, onWebSocketMessage } from './websocket/client'
+import { isServerAccess } from './utils/role'
 
 const route = useRoute()
 const { t, locale } = useI18n()
@@ -82,13 +83,19 @@ let wsBound = false
 let heartbeatTimer: number | null = null
 const language = ref(String(locale.value || 'zh-CN'))
 
+const isServer = isServerAccess()
 const isLoginRoute = computed(() => route.path === '/login')
-const navigation = computed(() => [
-  { to: '/devices', label: t('menu.devices'), icon: Monitor },
-  { to: '/messages', label: t('menu.messages'), icon: MessageSquareText },
-  { to: '/send', label: t('menu.send'), icon: Send },
-  { to: '/config', label: t('menu.config'), icon: Settings },
-])
+const navigation = computed(() => {
+  const items = [
+    { to: '/devices', label: t('menu.devices'), icon: Monitor },
+    { to: '/messages', label: t('menu.messages'), icon: MessageSquareText },
+    { to: '/send', label: t('menu.send'), icon: Send },
+    { to: '/config', label: t('menu.config'), icon: Settings },
+  ]
+  // 客户端（手机）：只保留「发送」，设备/消息/配置属于服务端管理功能
+  if (!isServer) return items.filter((i) => i.to === '/send')
+  return items
+})
 
 const activeTitle = computed(() => {
   if (route.path.startsWith('/devices')) return t('menu.devices')
@@ -108,7 +115,7 @@ watch(
       await registerDevice({
         id,
         display_name: id,
-        role: 'client',
+        role: isServer ? 'server' : 'client',
         platform: navigator.platform,
         browser: navigator.userAgent,
       })

@@ -59,6 +59,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '../stores/auth'
 import { qrCodeURL, registerDevice, resolveApiErrorMessage } from '../api'
+import { isServerAccess } from '../utils/role'
 
 const router = useRouter()
 const { t, locale } = useI18n()
@@ -88,11 +89,11 @@ async function loginSubmit() {
     await registerDevice({
       id,
       display_name: id,
-      role: 'client',
+      role: isServerAccess() ? 'server' : 'client',
       platform: navigator.platform,
       browser: navigator.userAgent,
     })
-    await router.replace('/devices')
+    await router.replace(isServerAccess() ? '/devices' : '/send')
   } catch (err) {
     error.value = resolveApiErrorMessage(err, 'login.failed')
   }
@@ -126,4 +127,10 @@ async function loginSubmit() {
   .login-qr { width: 190px; }
   .login-submit { min-height: 48px; }
 }
+
+.diag-panel { margin-top: 14px; padding: 12px; border: 3px solid var(--brutal-border-color); border-radius: 7px; background: #0f172a; color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+.diag-title { margin: 0 0 8px; font-weight: 900; letter-spacing: .1em; color: #fbbf24; }
+.diag-panel table { width: 100%; border-collapse: collapse; word-break: break-all; }
+.diag-panel td { padding: 3px 4px; border-bottom: 1px solid #334155; vertical-align: top; }
+.diag-panel td:first-child { color: #94a3b8; white-space: nowrap; padding-right: 8px; }
 </style>
