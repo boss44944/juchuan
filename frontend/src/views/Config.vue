@@ -118,8 +118,8 @@ async function save() {
 .setting-heading p { margin: 2px 0 0; color: #9a4b1e; font-size: 9px; font-weight: 900; letter-spacing: .15em; }
 .save-btn { grid-column: 1 / -1; justify-self: start; min-width: 190px; }
 
-@media (max-width: 680px) {
+@media (max-width: 780px) {
   .config-form { grid-template-columns: 1fr; }
-  .save-btn { width: 100%; }
+  .save-btn { width: 100%; min-height: 48px; }
 }
 </style>

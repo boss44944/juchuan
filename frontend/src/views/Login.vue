@@ -117,7 +117,13 @@ async function loginSubmit() {
 .login-submit { width: 100%; margin-top: 4px; }
 
 @media (max-width: 680px) {
+  .login-wrap { width: 100%; }
+  .login-card { padding: 18px; }
+  .login-head { align-items: flex-start; }
+  .login-logo { width: 52px; height: 52px; }
+  .login-head h1 { font-size: 28px; }
   .login-grid { grid-template-columns: 1fr; gap: 22px; }
   .login-qr { width: 190px; }
+  .login-submit { min-height: 48px; }
 }
 </style>

@@ -183,9 +183,16 @@ async function copyAddress() {
 .device-card code { display: block; overflow: hidden; color: var(--brutal-muted-foreground); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .device-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: auto; }
 
-@media (max-width: 560px) {
+@media (max-width: 700px) {
   .panel-header, .entry-panel { flex-direction: column; }
   .entry-panel { align-items: stretch; }
   .entry-qr-wrap { align-self: center; }
+}
+
+@media (max-width: 520px) {
+  .chip-group, .device-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .device-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .device-actions :deep(button) { width: 100%; min-height: 44px; }
+  .entry-meta :deep(button) { width: 100%; min-height: 44px; }
 }
 </style>

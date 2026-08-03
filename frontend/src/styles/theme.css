@@ -112,8 +112,19 @@ a { color: #8b3e18; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
 @media (max-width: 780px) {
-  .page-surface, .view-panel { padding: 16px; box-shadow: 5px 5px 0 var(--brutal-shadow-color); }
-  .panel-header { align-items: flex-start; }
+  body { background: var(--brutal-bg); }
+  .page-surface, .view-panel { padding: 15px; border-width: 2px; box-shadow: 4px 4px 0 var(--brutal-shadow-color); }
+  .panel-header { align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; padding-bottom: 16px; }
+  .panel-title { font-size: clamp(25px, 8vw, 34px); }
+  .modal-backdrop { align-items: end; padding: 12px 12px calc(12px + env(safe-area-inset-bottom)); }
+  .modal-card { width: 100%; max-height: calc(100dvh - 24px); overflow-y: auto; box-shadow: 5px 5px 0 var(--brutal-shadow-color); }
+  .modal-actions > * { min-height: 44px; }
+}
+
+@media (max-width: 520px) {
+  .panel-header { flex-direction: column; }
+  .stat-chip { padding: 6px 8px; }
+  .modal-actions { display: grid; grid-template-columns: 1fr 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

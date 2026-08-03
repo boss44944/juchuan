@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build && node scripts/sync-backend-static.mjs"
   },
   "dependencies": {
     "@lucide/vue": "^1.28.0",

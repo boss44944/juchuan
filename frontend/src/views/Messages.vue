@@ -230,7 +230,7 @@ function flashHighlight(rowKey: string) { if (!rowKey) return; highlightRowKey.v
 @keyframes row-flash { 50% { background: var(--brutal-accent); } }
 
 @media (max-width: 1100px) { .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 680px) {
+@media (max-width: 780px) {
   .filter-grid { grid-template-columns: 1fr; }
   .action-divider { width: 100%; height: 3px; }
   .message-table-wrap { display: none; }
@@ -244,5 +244,7 @@ function flashHighlight(rowKey: string) { if (!rowKey) return; highlightRowKey.v
   dl div { min-width: 0; }
   dt { color: var(--brutal-muted-foreground); font-size: 10px; font-weight: 900; }
   dd { margin: 3px 0 0; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+  .filter-actions :deep(button) { min-height: 44px; }
+  .row-actions :deep(button) { flex: 1 1 auto; min-height: 44px; }
 }
 </style>

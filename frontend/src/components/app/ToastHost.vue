@@ -2,7 +2,10 @@
 import { AlertCircle, CheckCircle2, Info, TriangleAlert, X } from '@lucide/vue'
 import { useToast, type ToastTone } from '@/composables/useToast'
 
-const toast = useToast()
+// Keep the collection as a top-level ref so Vue unwraps it in the template.
+// Iterating `toast.items` would iterate the readonly ref object itself and
+// render its internal fields as empty toast cards.
+const { items, dismiss } = useToast()
 
 const icons = {
   success: CheckCircle2,
@@ -15,10 +18,10 @@ const icons = {
 <template>
   <div class="toast-host" aria-live="polite" aria-atomic="false">
     <TransitionGroup name="toast">
-      <article v-for="item in toast.items" :key="item.id" class="toast-card" :class="`toast-card--${item.tone}`" role="status">
+      <article v-for="item in items" :key="item.id" class="toast-card" :class="`toast-card--${item.tone}`" role="status">
         <component :is="icons[item.tone]" :size="20" :stroke-width="3" aria-hidden="true" />
         <p>{{ item.message }}</p>
-        <button type="button" class="toast-close" aria-label="Close" @click="toast.dismiss(item.id)">
+        <button type="button" class="toast-close" aria-label="Close" @click="dismiss(item.id)">
           <X :size="18" :stroke-width="3" aria-hidden="true" />
         </button>
       </article>

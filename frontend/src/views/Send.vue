@@ -636,6 +636,11 @@ async function sendFile() {
   .composer-heading {
     gap: 10px;
   }
+
+  .composer-button,
+  .file-picker {
+    min-height: 48px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
