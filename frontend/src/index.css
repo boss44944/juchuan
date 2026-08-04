@@ -35,10 +35,10 @@
 }
 
 :root {
-    --brutal-border-width: 3px;
+    --brutal-border-width: 2px;
     --brutal-border-color: #000000;
-    --brutal-shadow-offset-x: 4px;
-    --brutal-shadow-offset-y: 4px;
+    --brutal-shadow-offset-x: 3px;
+    --brutal-shadow-offset-y: 3px;
     --brutal-shadow-color: #000000;
     --brutal-radius: 0px;
     --brutal-bg: #ffffff;
@@ -64,10 +64,10 @@
 }
 
 .dark {
-    --brutal-border-width: 3px;
+    --brutal-border-width: 2px;
     --brutal-border-color: #ffffff;
-    --brutal-shadow-offset-x: 4px;
-    --brutal-shadow-offset-y: 4px;
+    --brutal-shadow-offset-x: 3px;
+    --brutal-shadow-offset-y: 3px;
     --brutal-shadow-color: #ffffff;
     --brutal-radius: 0px;
     --brutal-bg: #141414;
@@ -151,7 +151,7 @@
     --brutal-shadow-offset-x: 3px;
     --brutal-shadow-offset-y: 3px;
     --brutal-shadow-color: #1e1e24;
-    --brutal-radius: 8px;
+    --brutal-radius: 0px;
     --brutal-bg: #faf9f6;
     --brutal-fg: #1e1e24;
     --brutal-primary: #d6c6e1;

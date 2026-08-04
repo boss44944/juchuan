@@ -1,6 +1,6 @@
 <template>
-  <section class="client-send" aria-labelledby="client-send-title">
-    <header class="client-page-head"><p>JUCHUAN / SEND</p><h1 id="client-send-title">{{ t('client.send.title') }}</h1><span>{{ t('client.send.target') }}</span></header>
+  <section class="client-send">
+    <header class="client-page-head client-page-head--target"><span>{{ t('client.send.target') }}</span></header>
 
     <div class="send-tabs" role="tablist" :aria-label="t('client.send.chooseType')">
       <button type="button" role="tab" :aria-selected="mode === 'text'" :class="{ active: mode === 'text' }" @click="mode = 'text'"><MessageSquareText :size="20" />{{ t('client.inbox.text') }}</button>
@@ -9,7 +9,7 @@
 
     <Card v-if="mode === 'text'" padding="default" class="send-panel">
       <div class="send-panel__title"><span><MessageSquareText :size="23" /></span><div><h2>{{ t('send.sendText') }}</h2><p>{{ t('client.send.textHint') }}</p></div></div>
-      <Textarea v-model="content" size="lg" class="client-textarea" :placeholder="t('send.inputText')" :aria-label="t('send.inputText')" />
+      <Textarea v-model="content" class="client-textarea" :placeholder="t('send.inputText')" :aria-label="t('send.inputText')" />
       <div class="character-count">{{ content.length }}</div>
       <Button variant="primary" size="lg" class="send-action" :loading="sending" :disabled="sending" @click="sendText"><SendIcon :size="20" />{{ t('client.send.sendToComputer') }}</Button>
     </Card>
@@ -83,26 +83,25 @@ async function sendFile() {
 
 <style scoped>
 .client-send { display: grid; gap: 17px; }
-.client-page-head p { margin: 0 0 4px; color: #9a4b1e; font-size: 9px; font-weight: 900; letter-spacing: .14em; }
-.client-page-head h1 { margin: 0; font-size: 30px; line-height: 1; }
-.client-page-head span { display: inline-block; margin-top: 9px; padding: 5px 8px; border: 2px solid var(--brutal-border-color); border-radius: 99px; background: var(--brutal-accent); font-size: 11px; font-weight: 900; }
-.send-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; border: 2px solid var(--brutal-border-color); border-radius: 7px; background: var(--brutal-muted); }
-.send-tabs button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 48px; border: 2px solid transparent; border-radius: 5px; background: transparent; color: var(--brutal-fg); font-weight: 900; cursor: pointer; }
+.client-page-head p { margin: 0 0 4px; color: #9a4b1e; font-size: 9px; font-weight: 600; letter-spacing: .14em; }
+.client-page-head--target span { display: inline-block; padding: 4px 8px; border: 2px solid var(--brutal-border-color); border-radius: var(--brutal-radius); background: var(--brutal-accent); font-size: 11px; font-weight: 600; }
+.send-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border: 2px solid var(--brutal-border-color); border-radius: var(--brutal-radius); background: var(--brutal-muted); }
+.send-tabs button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; border: 2px solid transparent; border-radius: var(--brutal-radius); background: transparent; color: var(--brutal-fg); font-weight: 600; cursor: pointer; }
 .send-tabs button.active { border-color: var(--brutal-border-color); background: var(--brutal-bg); box-shadow: 2px 2px 0 var(--brutal-shadow-color); }
 .send-tabs button:focus-visible { outline: 3px solid var(--brutal-ring); outline-offset: 1px; }
-.send-panel { display: grid; gap: 17px; box-shadow: 4px 4px 0 var(--brutal-shadow-color); }
-.send-panel__title { display: flex; align-items: center; gap: 12px; }
-.send-panel__title > span { display: grid; flex: 0 0 44px; width: 44px; height: 44px; place-items: center; border: 3px solid var(--brutal-border-color); background: var(--brutal-primary); box-shadow: 3px 3px 0 var(--brutal-shadow-color); }
+.send-panel { display: grid; gap: 15px; box-shadow: 3px 3px 0 var(--brutal-shadow-color); }
+.send-panel__title { display: flex; align-items: center; gap: 11px; }
+.send-panel__title > span { display: grid; flex: 0 0 38px; width: 38px; height: 38px; place-items: center; border: 2px solid var(--brutal-border-color); background: var(--brutal-primary); box-shadow: 2px 2px 0 var(--brutal-shadow-color); }
 .send-panel__title > .file-mark { background: var(--brutal-secondary); color: #fff; }
-.send-panel h2 { margin: 0; font-size: 20px; }
+.send-panel h2 { margin: 0; font-size: 16px; }
 .send-panel p { margin: 3px 0 0; color: var(--brutal-muted-foreground); font-size: 12px; line-height: 1.4; }
-:deep(.client-textarea) { min-height: 210px; resize: vertical; }
-.character-count { margin-top: -11px; color: var(--brutal-muted-foreground); font-size: 11px; font-weight: 900; text-align: right; }
-.file-picker { display: grid; min-height: 220px; width: 100%; place-items: center; align-content: center; gap: 13px; padding: 20px; border: 3px dashed var(--brutal-border-color); border-radius: 7px; background: var(--brutal-muted); color: var(--brutal-fg); text-align: center; cursor: pointer; }
+:deep(.client-textarea) { min-height: 180px; resize: vertical; }
+.character-count { margin-top: -11px; color: var(--brutal-muted-foreground); font-size: 11px; font-weight: 600; text-align: right; }
+.file-picker { display: grid; min-height: 180px; width: 100%; place-items: center; align-content: center; gap: 11px; padding: 16px; border: 2px dashed var(--brutal-border-color); border-radius: var(--brutal-radius); background: var(--brutal-muted); color: var(--brutal-fg); text-align: center; cursor: pointer; }
 .file-picker span { display: grid; gap: 4px; max-width: 100%; }
 .file-picker strong { overflow-wrap: anywhere; }
 .file-picker small { color: var(--brutal-muted-foreground); }
 .file-picker:focus-visible { outline: 3px solid var(--brutal-ring); outline-offset: 2px; }
-.send-action { width: 100%; min-height: 52px; }
-.privacy-note { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0; color: var(--brutal-muted-foreground); font-size: 11px; font-weight: 800; text-align: center; }
+.send-action { width: 100%; min-height: 46px; }
+.privacy-note { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0; color: var(--brutal-muted-foreground); font-size: 11px; font-weight: 600; text-align: center; }
 </style>

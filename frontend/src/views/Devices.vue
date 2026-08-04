@@ -1,24 +1,17 @@
 <template>
-  <section class="page-surface devices-view" aria-labelledby="devices-title">
-    <header class="panel-header">
-      <div>
-        <p class="panel-subtitle">JUCHUAN / NEARBY DEVICES</p>
-        <h2 id="devices-title" class="panel-title">{{ t('menu.devices') }}</h2>
-      </div>
-      <div class="chip-group">
-        <span class="stat-chip"><strong>{{ devices.length }}</strong>{{ t('devices.columns.name') }}</span>
-        <span class="stat-chip stat-chip--online"><strong>{{ onlineCount }}</strong>{{ t('devices.status.online') }}</span>
-      </div>
-    </header>
-
+  <section class="page-surface devices-view">
     <Card padding="lg" class="entry-panel">
       <div class="entry-meta">
         <span class="step-marker">ACCESS</span>
         <h3>{{ t('devices.entryTitle') }}</h3>
         <a :href="entryURL" target="_blank" rel="noreferrer">{{ entryURL }}</a>
-        <Button variant="outline" size="sm" @click="copyAddress">
-          <Copy :size="17" aria-hidden="true" />{{ t('devices.copyAddress') }}
-        </Button>
+        <div class="entry-actions">
+          <Button variant="outline" size="sm" @click="copyAddress">
+            <Copy :size="17" aria-hidden="true" />{{ t('devices.copyAddress') }}
+          </Button>
+          <span class="stat-chip"><strong>{{ devices.length }}</strong>{{ t('devices.columns.name') }}</span>
+          <span class="stat-chip stat-chip--online"><strong>{{ onlineCount }}</strong>{{ t('devices.status.online') }}</span>
+        </div>
       </div>
       <div class="entry-qr-wrap">
         <img :src="qrImage" :alt="t('devices.qrAlt')" class="entry-qr" />
@@ -58,7 +51,7 @@
         <h3 :id="dialogTitleID">{{ dialog.kind === 'rename' ? t('devices.dialog.renameTitle') : t('devices.dialog.removeTitle') }}</h3>
         <template v-if="dialog.kind === 'rename'">
           <p>{{ t('devices.dialog.renameInput') }}</p>
-          <Input ref="renameInput" v-model="dialog.name" size="lg" :aria-label="t('devices.dialog.renameInput')" @keyup.enter="confirmDialog" />
+          <Input ref="renameInput" v-model="dialog.name" :aria-label="t('devices.dialog.renameInput')" @keyup.enter="confirmDialog" />
         </template>
         <p v-else>{{ t('devices.dialog.removeConfirm') }}</p>
         <div class="modal-actions">
@@ -167,21 +160,23 @@ async function copyAddress() {
 <style scoped>
 .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
 .stat-chip--online { background: #dbe9b8; }
-.entry-panel { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; background: var(--brutal-accent); }
+.entry-panel { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; background: var(--brutal-accent); }
 .entry-meta { display: grid; justify-items: start; gap: 8px; min-width: 0; }
-.entry-meta h3 { margin: 0; font-size: 22px; }
-.entry-meta a { word-break: break-all; font-weight: 800; }
-.step-marker { padding: 3px 7px; border: 2px solid var(--brutal-border-color); background: var(--brutal-bg); font-size: 10px; font-weight: 900; letter-spacing: .12em; }
-.entry-qr-wrap { flex: 0 0 auto; padding: 8px; border: 3px solid var(--brutal-border-color); background: #fff; }
-.entry-qr { display: block; width: 112px; height: 112px; padding: 5px; background: #fff; }
-.device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
-.device-card { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.entry-meta h3 { margin: 0; font-size: 16px; }
+.entry-meta a { word-break: break-all; font-weight: 600; }
+.entry-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.step-marker { padding: 3px 7px; border: 2px solid var(--brutal-border-color); background: var(--brutal-bg); font-size: 10px; font-weight: 600; letter-spacing: .12em; }
+.entry-qr-wrap { flex: 0 0 auto; padding: 6px; border: 2px solid var(--brutal-border-color); background: #fff; }
+.entry-qr { display: block; width: 104px; height: 104px; padding: 5px; background: #fff; }
+.device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.device-card { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .device-card__head { display: flex; align-items: center; justify-content: space-between; }
-.device-icon { display: grid; width: 44px; height: 44px; place-items: center; border: 3px solid var(--brutal-border-color); background: var(--brutal-primary); box-shadow: 3px 3px 0 var(--brutal-shadow-color); }
-.device-card h3 { margin: 0 0 5px; font-size: 21px; overflow-wrap: anywhere; }
+.device-icon { display: grid; width: 40px; height: 40px; place-items: center; border: 2px solid var(--brutal-border-color); background: var(--brutal-primary); box-shadow: 2px 2px 0 var(--brutal-shadow-color); }
+.device-card h3 { margin: 0 0 5px; font-size: 16px; overflow-wrap: anywhere; }
 .device-card p { margin: 0 0 8px; color: var(--brutal-muted-foreground); }
 .device-card code { display: block; overflow: hidden; color: var(--brutal-muted-foreground); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.device-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: auto; }
+.device-actions { display: flex; flex-wrap: nowrap; gap: 9px; margin-top: auto; }
+.device-actions :deep(button) { flex: 1 1 auto; white-space: nowrap; }
 
 @media (max-width: 700px) {
   .panel-header, .entry-panel { flex-direction: column; }
@@ -190,9 +185,10 @@ async function copyAddress() {
 }
 
 @media (max-width: 520px) {
-  .chip-group, .device-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
   .device-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .device-actions :deep(button) { width: 100%; min-height: 44px; }
+  .device-actions :deep(button) { flex: 1 1 0; min-height: 44px; }
   .entry-meta :deep(button) { width: 100%; min-height: 44px; }
+  .entry-actions { align-items: stretch; }
+  .entry-actions .stat-chip { flex: 1 1 45%; justify-content: center; }
 }
 </style>

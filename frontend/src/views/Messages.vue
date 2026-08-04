@@ -1,35 +1,40 @@
 <template>
   <section class="page-surface messages-view" aria-labelledby="messages-title">
-    <header class="panel-header">
-      <div>
-        <p class="panel-subtitle">JUCHUAN / DELIVERY HISTORY</p>
-        <h2 id="messages-title" class="panel-title">{{ t('menu.messages') }}</h2>
-      </div>
+    <div class="messages-total">
       <span class="stat-chip"><strong>{{ total }}</strong>{{ t('messagesPage.table.content') }}</span>
-    </header>
+    </div>
 
     <Card padding="lg" class="filter-panel">
       <div class="filter-grid">
-        <select v-model="query.type" class="brutal-select" :aria-label="t('messagesPage.table.type')" @change="refresh(1)">
-          <option value="">{{ t('messagesPage.filters.typeAll') }}</option>
-          <option value="TEXT">{{ t('messagesPage.filters.typeText') }}</option>
-          <option value="FILE">{{ t('messagesPage.filters.typeFile') }}</option>
-        </select>
-        <select v-model="query.status" class="brutal-select" :aria-label="t('messagesPage.table.status')" @change="refresh(1)">
-          <option value="">{{ t('messagesPage.filters.statusAll') }}</option>
-          <option value="CREATED">{{ t('messagesPage.status.created') }}</option>
-          <option value="DELIVERED">{{ t('messagesPage.status.delivered') }}</option>
-          <option value="READ">{{ t('messagesPage.status.read') }}</option>
-        </select>
+        <Select
+          :model-value="query.type"
+          :options="typeOptions"
+          :aria-label="t('messagesPage.table.type')"
+          class="w-full"
+          @update:model-value="(v) => { query.type = (v || '') as typeof query.type; refresh(1) }"
+        />
+        <Select
+          :model-value="query.status"
+          :options="statusOptions"
+          :aria-label="t('messagesPage.table.status')"
+          class="w-full"
+          @update:model-value="(v) => { query.status = (v || '') as typeof query.status; refresh(1) }"
+        />
         <Input v-model="query.device_id" :placeholder="t('messagesPage.filters.deviceId')" :aria-label="t('messagesPage.filters.deviceId')" @keyup.enter="refresh(1)" />
-        <select v-model="query.sender_device_id" class="brutal-select" :aria-label="t('messagesPage.filters.sender')" @change="refresh(1)">
-          <option value="">{{ t('messagesPage.filters.sender') }}</option>
-          <option v-for="device in devices" :key="`sender-${device.id}`" :value="device.id">{{ device.display_name }}</option>
-        </select>
-        <select v-model="query.target_device_id" class="brutal-select" :aria-label="t('messagesPage.filters.target')" @change="refresh(1)">
-          <option value="">{{ t('messagesPage.filters.target') }}</option>
-          <option v-for="device in devices" :key="`target-${device.id}`" :value="device.id">{{ device.display_name }}</option>
-        </select>
+        <Select
+          :model-value="query.sender_device_id"
+          :options="senderOptions"
+          :aria-label="t('messagesPage.filters.sender')"
+          class="w-full"
+          @update:model-value="(v) => { query.sender_device_id = v || ''; refresh(1) }"
+        />
+        <Select
+          :model-value="query.target_device_id"
+          :options="targetOptions"
+          :aria-label="t('messagesPage.filters.target')"
+          class="w-full"
+          @update:model-value="(v) => { query.target_device_id = v || ''; refresh(1) }"
+        />
       </div>
       <div class="filter-actions">
         <Button variant="primary" size="sm" @click="refresh(1)"><Search :size="16" aria-hidden="true" />{{ t('messagesPage.filters.apply') }}</Button>
@@ -130,6 +135,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { useToast } from '@/composables/useToast'
 import { useMessageStore, type MessageItem } from '../stores/message'
 import { useDeviceStore } from '../stores/device'
@@ -152,6 +158,25 @@ const { t } = useI18n()
 const toast = useToast()
 const messages = computed(() => store.messages)
 const devices = computed(() => deviceStore.devices)
+const typeOptions = computed(() => [
+  { label: t('messagesPage.filters.typeAll'), value: '' },
+  { label: t('messagesPage.filters.typeText'), value: 'TEXT' },
+  { label: t('messagesPage.filters.typeFile'), value: 'FILE' },
+])
+const statusOptions = computed(() => [
+  { label: t('messagesPage.filters.statusAll'), value: '' },
+  { label: t('messagesPage.status.created'), value: 'CREATED' },
+  { label: t('messagesPage.status.delivered'), value: 'DELIVERED' },
+  { label: t('messagesPage.status.read'), value: 'READ' },
+])
+const senderOptions = computed(() => [
+  { label: t('messagesPage.filters.sender'), value: '' },
+  ...devices.value.map((device) => ({ label: device.display_name, value: device.id })),
+])
+const targetOptions = computed(() => [
+  { label: t('messagesPage.filters.target'), value: '' },
+  ...devices.value.map((device) => ({ label: device.display_name, value: device.id })),
+])
 const total = ref(0)
 const loading = ref(false)
 const selectedRows = ref<MessageItem[]>([])
@@ -304,27 +329,28 @@ function flashHighlight(rowKey: string) { if (!rowKey) return; highlightRowKey.v
 </script>
 
 <style scoped>
+.messages-total { display: flex; justify-content: flex-end; margin-bottom: 14px; }
 .filter-panel { margin-bottom: 20px; background: var(--brutal-muted); }
 .filter-grid { display: grid; grid-template-columns: repeat(5, minmax(145px, 1fr)); gap: 10px; }
 .filter-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
 .action-divider { width: 3px; height: 30px; background: var(--brutal-border-color); }
-.message-table-wrap { overflow-x: auto; border: 3px solid var(--brutal-border-color); box-shadow: 5px 5px 0 var(--brutal-shadow-color); }
-.message-table { width: 100%; min-width: 1200px; border-collapse: collapse; background: var(--brutal-bg); }
-.message-table th, .message-table td { padding: 11px 10px; border-right: 2px solid var(--brutal-border-color); border-bottom: 2px solid var(--brutal-border-color); text-align: left; vertical-align: middle; }
-.message-table th { background: var(--brutal-primary); font-size: 11px; font-weight: 950; letter-spacing: .05em; }
+.message-table-wrap { overflow-x: auto; border: 2px solid var(--brutal-border-color); box-shadow: 3px 3px 0 var(--brutal-shadow-color); }
+.message-table { width: 100%; min-width: 1160px; border-collapse: collapse; background: var(--brutal-bg); }
+.message-table th, .message-table td { padding: 9px 9px; border-right: 2px solid var(--brutal-border-color); border-bottom: 2px solid var(--brutal-border-color); text-align: left; vertical-align: middle; }
+.message-table th { background: var(--brutal-primary); font-size: 12px; font-weight: 500; letter-spacing: .05em; }
 .message-table tr:last-child td { border-bottom: 0; }
 .message-table th:last-child, .message-table td:last-child { border-right: 0; }
-.message-table td:last-child { min-width: 210px; }
-.content-cell { max-width: 280px; overflow-wrap: anywhere; }
-.content-cell a, .download-link { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; }
+.message-table td:last-child { min-width: 200px; }
+.content-cell { max-width: 260px; overflow-wrap: anywhere; }
+.content-cell a, .download-link { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
 .row-actions { display: flex; flex-wrap: nowrap; align-items: center; gap: 7px; white-space: nowrap; }
 .row-highlight { background: #fff0bd !important; animation: row-flash 650ms ease 2; }
-.pagination { display: flex; justify-content: center; gap: 8px; margin-top: 22px; }
+.pagination { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
 .message-cards { display: none; }
 @keyframes row-flash { 50% { background: var(--brutal-accent); } }
 .confirm-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.5); }
-.confirm-dialog { width: 90%; max-width: 400px; padding: 24px; border: 3px solid var(--brutal-border-color); border-radius: 8px; background: var(--brutal-bg); box-shadow: 6px 6px 0 var(--brutal-shadow-color); }
-.confirm-dialog strong { display: block; margin-bottom: 8px; font-size: 18px; }
+.confirm-dialog { width: 90%; max-width: 400px; padding: 20px; border: 2px solid var(--brutal-border-color); border-radius: var(--brutal-radius); background: var(--brutal-bg); box-shadow: 4px 4px 0 var(--brutal-shadow-color); }
+.confirm-dialog strong { display: block; margin-bottom: 8px; font-size: 16px; }
 .confirm-dialog p { margin: 0 0 20px; color: var(--brutal-muted-foreground); font-size: 14px; }
 .confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
@@ -341,7 +367,7 @@ function flashHighlight(rowKey: string) { if (!rowKey) return; highlightRowKey.v
   .message-content { margin: 0; padding: 12px; border: 2px solid var(--brutal-border-color); background: var(--brutal-muted); overflow-wrap: anywhere; }
   dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
   dl div { min-width: 0; }
-  dt { color: var(--brutal-muted-foreground); font-size: 10px; font-weight: 900; }
+  dt { color: var(--brutal-muted-foreground); font-size: 10px; font-weight: 600; }
   dd { margin: 3px 0 0; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
   .filter-actions :deep(button) { min-height: 44px; }
   .row-actions { flex-wrap: wrap; }

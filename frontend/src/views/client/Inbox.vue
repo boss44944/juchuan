@@ -1,12 +1,11 @@
 <template>
-  <section class="inbox-view" aria-labelledby="client-inbox-title">
-    <header class="client-page-head">
-      <div><p>JUCHUAN / INBOX</p><h1 id="client-inbox-title">{{ t('client.inbox.title') }}</h1></div>
+  <section class="inbox-view">
+    <div class="client-page-head client-page-head--bare">
       <div class="client-page-head__actions">
         <Button variant="outline" size="sm" :loading="loading" @click="loadInbox(1)"><RefreshCw :size="17" />{{ t('client.inbox.refresh') }}</Button>
         <Button v-if="messages.length > 0" variant="danger" size="sm" @click="openClearAllConfirm"><Trash2 :size="17" />{{ t('client.inbox.clearAll') }}</Button>
       </div>
-    </header>
+    </div>
 
     <div class="inbox-summary">
       <span><strong>{{ total }}</strong>{{ t('client.inbox.total') }}</span>
@@ -252,21 +251,22 @@ async function confirmClearAll() {
 <style scoped>
 .inbox-view { display: grid; gap: 16px; }
 .client-page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
-.client-page-head p { margin: 0 0 4px; color: #9a4b1e; font-size: 9px; font-weight: 900; letter-spacing: .14em; }
-.client-page-head h1 { margin: 0; font-size: 30px; line-height: 1; }
+.client-page-head--bare { justify-content: flex-end; }
+.client-page-head p { margin: 0 0 4px; color: #9a4b1e; font-size: 9px; font-weight: 600; letter-spacing: .14em; }
+.client-page-head h1 { margin: 0; font-size: 22px; line-height: 1.2; }
 .client-page-head__actions { display: flex; gap: 8px; }
 .inbox-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.inbox-summary span { display: flex; align-items: baseline; gap: 6px; padding: 11px 13px; border: 2px solid var(--brutal-border-color); border-radius: 6px; background: #fff; font-size: 12px; font-weight: 900; }
-.inbox-summary strong { font-size: 23px; }
+.inbox-summary span { display: flex; align-items: baseline; gap: 6px; padding: 9px 12px; border: 2px solid var(--brutal-border-color); border-radius: var(--brutal-radius); background: #fff; font-size: 12px; font-weight: 600; }
+.inbox-summary strong { font-size: 18px; }
 .inbox-summary__unread { background: var(--brutal-accent) !important; }
-.inbox-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 5px; border: 2px solid var(--brutal-border-color); border-radius: 7px; background: var(--brutal-muted); }
-.inbox-tabs button { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; border: 2px solid transparent; border-radius: 5px; background: transparent; color: var(--brutal-fg); font-weight: 900; cursor: pointer; }
+.inbox-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px; border: 2px solid var(--brutal-border-color); border-radius: var(--brutal-radius); background: var(--brutal-muted); }
+.inbox-tabs button { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 40px; border: 2px solid transparent; border-radius: var(--brutal-radius); background: transparent; color: var(--brutal-fg); font-weight: 600; cursor: pointer; }
 .inbox-tabs button.active { border-color: var(--brutal-border-color); background: var(--brutal-bg); box-shadow: 2px 2px 0 var(--brutal-shadow-color); }
 .inbox-tabs button:focus-visible { outline: 3px solid var(--brutal-ring); outline-offset: 1px; }
-.client-state { display: grid; min-height: 240px; place-items: center; align-content: center; gap: 10px; padding: 28px; border: 3px dashed var(--brutal-border-color); border-radius: 7px; background: var(--brutal-muted); text-align: center; }
+.client-state { display: grid; min-height: 200px; place-items: center; align-content: center; gap: 10px; padding: 20px; border: 2px dashed var(--brutal-border-color); border-radius: var(--brutal-radius); background: var(--brutal-muted); text-align: center; }
 .client-state p { margin: 0; color: var(--brutal-muted-foreground); }
 .client-state--error { color: var(--brutal-destructive); }
-.state-pulse { width: 42px; height: 42px; border: 4px solid var(--brutal-border-color); border-right-color: var(--brutal-primary); border-radius: 50%; animation: spin .8s linear infinite; }
+.state-pulse { width: 38px; height: 38px; border: 4px solid var(--brutal-border-color); border-right-color: var(--brutal-primary); border-radius: 50%; animation: spin .8s linear infinite; }
 .message-list { display: grid; gap: 14px; }
 .swipe-wrapper { position: relative; overflow: hidden; }
 .swipe-content { position: relative; z-index: 1; transition: transform 0.15s ease-out; }
@@ -274,26 +274,26 @@ async function confirmClearAll() {
 .mobile-message { position: relative; display: grid; gap: 13px; box-shadow: 3px 3px 0 var(--brutal-shadow-color); }
 .mobile-message--unread::before { position: absolute; top: -3px; bottom: -3px; left: -3px; width: 7px; border: 2px solid var(--brutal-border-color); background: var(--brutal-secondary); content: ''; }
 .mobile-message__top { display: flex; align-items: center; gap: 10px; }
-.message-type { display: grid; flex: 0 0 40px; width: 40px; height: 40px; place-items: center; border: 2px solid var(--brutal-border-color); background: var(--brutal-primary); box-shadow: 2px 2px 0 var(--brutal-shadow-color); }
+.message-type { display: grid; flex: 0 0 36px; width: 36px; height: 36px; place-items: center; border: 2px solid var(--brutal-border-color); background: var(--brutal-primary); box-shadow: 2px 2px 0 var(--brutal-shadow-color); }
 .message-type--file { background: var(--brutal-secondary); color: #fff; }
 .mobile-message__meta { display: grid; flex: 1; min-width: 0; }
 .mobile-message__meta small { margin-top: 2px; color: var(--brutal-muted-foreground); font-size: 11px; }
-.message-copy { max-height: 180px; margin: 0; padding: 12px; border: 2px solid var(--brutal-border-color); background: var(--brutal-muted); line-height: 1.55; overflow: auto; overflow-wrap: anywhere; white-space: pre-wrap; }
-.file-copy { display: flex; align-items: center; gap: 11px; padding: 13px; border: 2px solid var(--brutal-border-color); background: var(--brutal-muted); }
+.message-copy { max-height: 150px; margin: 0; padding: 11px; border: 2px solid var(--brutal-border-color); background: var(--brutal-muted); line-height: 1.55; overflow: auto; overflow-wrap: anywhere; white-space: pre-wrap; }
+.file-copy { display: flex; align-items: center; gap: 11px; padding: 11px; border: 2px solid var(--brutal-border-color); background: var(--brutal-muted); }
 .file-copy span { display: grid; min-width: 0; }
 .file-copy small { margin-top: 3px; color: var(--brutal-muted-foreground); }
 .mobile-message__from { display: flex; align-items: center; gap: 5px; min-width: 0; color: var(--brutal-muted-foreground); font-size: 11px; }
 .mobile-message__from code { margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.message-action, .download-action { width: 100%; min-height: 48px; }
-.download-action { display: flex; align-items: center; justify-content: center; gap: 8px; border: 3px solid var(--brutal-border-color); border-radius: 6px; background: var(--brutal-secondary); box-shadow: 4px 4px 0 var(--brutal-shadow-color); color: #fff; font-weight: 900; text-decoration: none; }
+.message-action, .download-action { width: 100%; min-height: 44px; }
+.download-action { display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px solid var(--brutal-border-color); border-radius: var(--brutal-radius); background: var(--brutal-secondary); box-shadow: 3px 3px 0 var(--brutal-shadow-color); color: #fff; font-weight: 600; text-decoration: none; }
 .download-action:active { box-shadow: none; transform: translate(3px, 3px); }
 .download-action:focus-visible { outline: 3px solid var(--brutal-ring); outline-offset: 2px; }
 .load-more { width: 100%; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .state-pulse { animation: none; } }
 .confirm-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.5); }
-.confirm-dialog { width: 90%; max-width: 340px; padding: 24px; border: 3px solid var(--brutal-border-color); border-radius: 8px; background: var(--brutal-bg); box-shadow: 6px 6px 0 var(--brutal-shadow-color); }
-.confirm-dialog strong { display: block; margin-bottom: 8px; font-size: 18px; }
+.confirm-dialog { width: 90%; max-width: 340px; padding: 20px; border: 2px solid var(--brutal-border-color); border-radius: var(--brutal-radius); background: var(--brutal-bg); box-shadow: 4px 4px 0 var(--brutal-shadow-color); }
+.confirm-dialog strong { display: block; margin-bottom: 8px; font-size: 16px; }
 .confirm-dialog p { margin: 0 0 20px; color: var(--brutal-muted-foreground); font-size: 14px; }
 .confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
 </style>

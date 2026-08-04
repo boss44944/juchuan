@@ -55,7 +55,7 @@ const icons = {
   pointer-events: auto;
 }
 
-.toast-card p { margin: 0; font-weight: 800; line-height: 1.4; }
+.toast-card p { margin: 0; font-weight: 600; line-height: 1.4; }
 .toast-card--success { background: #dbe9b8; }
 .toast-card--warning { background: var(--brutal-accent); }
 .toast-card--error { background: #f2b3aa; }

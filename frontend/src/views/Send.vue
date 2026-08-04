@@ -1,9 +1,8 @@
 <template>
-  <section class="send-view theme-juchuan" aria-labelledby="send-page-title">
+  <section class="send-view theme-juchuan">
     <header class="send-hero">
       <div>
         <p class="send-eyebrow">JUCHUAN / LOCAL TRANSFER</p>
-        <h2 id="send-page-title">{{ t('menu.send') }}</h2>
         <p class="send-subtitle">{{ t('send.subtitle') }}</p>
       </div>
       <Badge v-if="isServer" variant="accent" size="sm" class="selection-count">
@@ -86,7 +85,6 @@
 
         <Textarea
           v-model="content"
-          size="lg"
           class="message-textarea"
           :placeholder="t('send.inputText')"
           :aria-label="t('send.inputText')"
@@ -285,12 +283,12 @@ async function sendFile() {
 
 <style scoped>
 .theme-juchuan {
-  --brutal-border-width: 3px;
+  --brutal-border-width: 2px;
   --brutal-border-color: #4b2b15;
   --brutal-shadow-color: #4b2b15;
-  --brutal-shadow-offset-x: 5px;
-  --brutal-shadow-offset-y: 5px;
-  --brutal-radius: 7px;
+  --brutal-shadow-offset-x: 3px;
+  --brutal-shadow-offset-y: 3px;
+  --brutal-radius: 0px;
   --brutal-bg: #fff8e7;
   --brutal-fg: #2b1a0f;
   --brutal-primary: #f3b63f;
@@ -315,10 +313,10 @@ async function sendFile() {
 .send-view {
   color: var(--brutal-fg);
   background: #fff8e7;
-  border: 3px solid var(--brutal-border-color);
-  border-radius: 9px;
-  box-shadow: 8px 8px 0 var(--brutal-shadow-color);
-  padding: 24px;
+  border: 2px solid var(--brutal-border-color);
+  border-radius: var(--brutal-radius);
+  box-shadow: 4px 4px 0 var(--brutal-shadow-color);
+  padding: 20px;
 }
 
 .send-hero,
@@ -327,28 +325,27 @@ async function sendFile() {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
 }
 
 .send-hero {
-  padding: 4px 4px 22px;
-  border-bottom: 3px solid var(--brutal-border-color);
+  padding: 4px 4px 18px;
+  border-bottom: 2px solid var(--brutal-border-color);
 }
 
 .send-eyebrow {
-  margin: 0 0 6px;
+  margin: 0 0 5px;
   color: #9a4b1e;
-  font-size: 11px;
-  font-weight: 900;
+  font-size: 10px;
+  font-weight: 600;
   letter-spacing: 0.16em;
 }
 
 .send-hero h2 {
   margin: 0;
-  font-size: clamp(28px, 4vw, 44px);
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: -0.035em;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 500;
 }
 
 .send-subtitle,
@@ -364,26 +361,26 @@ async function sendFile() {
 }
 
 .target-panel {
-  margin: 24px 0;
-  padding: 20px;
-  border: 3px solid var(--brutal-border-color);
+  margin: 18px 0;
+  padding: 16px;
+  border: 2px solid var(--brutal-border-color);
   border-radius: var(--brutal-radius);
   background: var(--brutal-muted);
-  box-shadow: 5px 5px 0 var(--brutal-secondary);
+  box-shadow: 3px 3px 0 var(--brutal-secondary);
 }
 
 .section-heading h3,
 .composer-heading h3 {
   margin: 0;
   color: var(--brutal-fg);
-  font-size: 18px;
-  font-weight: 900;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .step-marker {
   color: #9a4b1e;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: 0.08em;
 }
 
@@ -391,13 +388,13 @@ async function sendFile() {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 18px;
-  padding: 16px;
-  border: 3px solid var(--brutal-border-color);
+  margin-top: 16px;
+  padding: 14px;
+  border: 2px solid var(--brutal-border-color);
   border-radius: var(--brutal-radius);
   background: #fff8e7;
-  box-shadow: 4px 4px 0 var(--brutal-shadow-color);
-  font-weight: 800;
+  box-shadow: 3px 3px 0 var(--brutal-shadow-color);
+  font-weight: 600;
 }
 
 .target-grid {
@@ -412,18 +409,18 @@ async function sendFile() {
   align-items: center;
   gap: 10px;
   min-width: 0;
-  padding: 12px;
+  padding: 10px;
   cursor: pointer;
   background: var(--brutal-bg);
-  border: 3px solid var(--brutal-border-color);
+  border: 2px solid var(--brutal-border-color);
   border-radius: var(--brutal-radius);
-  box-shadow: 3px 3px 0 var(--brutal-shadow-color);
+  box-shadow: 2px 2px 0 var(--brutal-shadow-color);
   transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
 }
 
 .target-option:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 5px 5px 0 var(--brutal-shadow-color);
+  box-shadow: 3px 3px 0 var(--brutal-shadow-color);
 }
 
 .target-option:has(input:focus-visible) {
@@ -444,13 +441,13 @@ async function sendFile() {
 
 .target-check {
   display: grid;
-  flex: 0 0 24px;
-  width: 24px;
-  height: 24px;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
   place-items: center;
   color: transparent;
   background: #fff;
-  border: 3px solid var(--brutal-border-color);
+  border: 2px solid var(--brutal-border-color);
 }
 
 .target-option--selected .target-check {
@@ -480,15 +477,15 @@ async function sendFile() {
 
 .target-state {
   display: flex;
-  min-height: 72px;
+  min-height: 56px;
   align-items: center;
   justify-content: center;
   gap: 12px;
   margin-top: 18px;
-  padding: 16px;
+  padding: 14px;
   color: var(--brutal-muted-foreground);
-  font-weight: 700;
-  border: 3px dashed var(--brutal-border-color);
+  font-weight: 500;
+  border: 2px dashed var(--brutal-border-color);
   background: rgba(255, 248, 231, 0.65);
 }
 
@@ -516,13 +513,13 @@ async function sendFile() {
 .composer-card {
   display: flex;
   min-width: 0;
-  min-height: 390px;
+  min-height: 340px;
   flex-direction: column;
 }
 
 .composer-heading {
   align-items: center;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
 .composer-heading > div {
@@ -532,14 +529,14 @@ async function sendFile() {
 
 .composer-icon {
   display: grid;
-  flex: 0 0 46px;
-  width: 46px;
-  height: 46px;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
   place-items: center;
   color: var(--brutal-fg);
-  border: 3px solid var(--brutal-border-color);
+  border: 2px solid var(--brutal-border-color);
   background: var(--brutal-primary);
-  box-shadow: 3px 3px 0 var(--brutal-shadow-color);
+  box-shadow: 2px 2px 0 var(--brutal-shadow-color);
 }
 
 .composer-icon--orange {
@@ -548,7 +545,7 @@ async function sendFile() {
 }
 
 :deep(.message-textarea) {
-  min-height: 180px;
+  min-height: 150px;
   resize: vertical;
 }
 
@@ -557,7 +554,7 @@ async function sendFile() {
   margin: 7px 2px 16px;
   color: var(--brutal-muted-foreground);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   text-align: right;
 }
 
@@ -569,17 +566,17 @@ async function sendFile() {
 .file-picker {
   display: flex;
   width: 100%;
-  min-height: 180px;
+  min-height: 150px;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  margin: 0 0 22px;
-  padding: 20px;
+  margin: 0 0 20px;
+  padding: 16px;
   cursor: pointer;
   color: var(--brutal-fg);
   text-align: left;
   background: var(--brutal-muted);
-  border: 3px dashed var(--brutal-border-color);
+  border: 2px dashed var(--brutal-border-color);
   border-radius: var(--brutal-radius);
   transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
 }
@@ -587,7 +584,7 @@ async function sendFile() {
 .file-picker:hover {
   transform: translate(-1px, -1px);
   background: var(--brutal-accent);
-  box-shadow: 5px 5px 0 var(--brutal-shadow-color);
+  box-shadow: 3px 3px 0 var(--brutal-shadow-color);
 }
 
 .file-picker:active {
@@ -666,8 +663,8 @@ async function sendFile() {
   }
 
   .composer-card {
-    min-height: 360px;
-    padding: 18px;
+    min-height: 320px;
+    padding: 16px;
   }
 
   .composer-heading {
