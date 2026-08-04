@@ -9,7 +9,7 @@ export const api = axios.create({
 
 function tByKey(key: string, params?: Record<string, unknown>) {
   if (i18n.global.te(key)) {
-    return i18n.global.t(key, params)
+    return params ? i18n.global.t(key, params) : i18n.global.t(key)
   }
   return i18n.global.t('error.UNKNOWN')
 }

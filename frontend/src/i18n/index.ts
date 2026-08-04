@@ -80,6 +80,23 @@ const messages = {
         fileSent: '文件已发送'
       }
     },
+    client: {
+      home: '返回手机收件箱',
+      navigation: '手机端导航',
+      inbox: {
+        title: '收件箱', refresh: '刷新', total: '条消息', unread: '条未读', filter: '筛选消息',
+        all: '全部', text: '文字', file: '文件', loading: '正在读取消息…', retry: '重新加载',
+        emptyTitle: '还没有收到消息', emptyHint: '电脑发来的文字和文件会出现在这里',
+        textMessage: '文字消息', fileMessage: '文件消息', receivedFile: '电脑发来的文件',
+        fromComputer: '来自电脑', copy: '复制文字', download: '下载文件', copied: '文字已复制',
+        copyFailed: '复制失败，请长按文字复制', loadMore: '加载更多'
+      },
+      send: {
+        title: '发送到电脑', target: '当前电脑', chooseType: '选择发送类型',
+        textHint: '粘贴或输入文字，点击按钮直接发送', fileHint: '从手机中选择一个文件发送到电脑',
+        fileEmpty: '支持手机系统文件选择器', sendToComputer: '发送到电脑', localOnly: '仅在当前局域网内传输'
+      }
+    },
     messagesPage: {
       filters: {
         typeAll: '全部类型',
@@ -246,6 +263,23 @@ const messages = {
         fileSent: 'File sent'
       }
     },
+    client: {
+      home: 'Back to mobile inbox',
+      navigation: 'Mobile navigation',
+      inbox: {
+        title: 'Inbox', refresh: 'Refresh', total: 'messages', unread: 'unread', filter: 'Filter messages',
+        all: 'All', text: 'Text', file: 'Files', loading: 'Loading messages…', retry: 'Try Again',
+        emptyTitle: 'No messages yet', emptyHint: 'Text and files sent from your computer will appear here',
+        textMessage: 'Text message', fileMessage: 'File message', receivedFile: 'File from computer',
+        fromComputer: 'From computer', copy: 'Copy Text', download: 'Download File', copied: 'Text copied',
+        copyFailed: 'Copy failed. Touch and hold the text to copy it.', loadMore: 'Load More'
+      },
+      send: {
+        title: 'Send to Computer', target: 'Current computer', chooseType: 'Choose transfer type',
+        textHint: 'Paste or type text, then send it directly', fileHint: 'Choose a file from your phone to send to the computer',
+        fileEmpty: 'Uses your phone file picker', sendToComputer: 'Send to Computer', localOnly: 'Transfers only on your current local network'
+      }
+    },
     messagesPage: {
       filters: {
         typeAll: 'All Types',
@@ -410,6 +444,23 @@ const messages = {
         fileRequired: '先にファイルを選択してください',
         textSent: 'テキストを送信しました',
         fileSent: 'ファイルを送信しました'
+      }
+    },
+    client: {
+      home: 'モバイル受信箱に戻る',
+      navigation: 'モバイルナビゲーション',
+      inbox: {
+        title: '受信箱', refresh: '更新', total: '件', unread: '件未読', filter: 'メッセージを絞り込む',
+        all: 'すべて', text: 'テキスト', file: 'ファイル', loading: 'メッセージを読み込み中…', retry: '再読み込み',
+        emptyTitle: 'メッセージはまだありません', emptyHint: 'PCから送信されたテキストやファイルがここに表示されます',
+        textMessage: 'テキストメッセージ', fileMessage: 'ファイルメッセージ', receivedFile: 'PCからのファイル',
+        fromComputer: 'PCから', copy: 'テキストをコピー', download: 'ファイルをダウンロード', copied: 'コピーしました',
+        copyFailed: 'コピーできませんでした。テキストを長押ししてください。', loadMore: 'さらに読み込む'
+      },
+      send: {
+        title: 'PCへ送信', target: '現在のPC', chooseType: '送信タイプを選択',
+        textHint: 'テキストを入力または貼り付けて直接送信します', fileHint: 'スマホからファイルを選びPCへ送信します',
+        fileEmpty: 'スマホのファイル選択を使用します', sendToComputer: 'PCへ送信', localOnly: '現在のローカルネットワーク内だけで転送します'
       }
     },
     messagesPage: {

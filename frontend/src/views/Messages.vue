@@ -69,7 +69,7 @@
       </div>
 
       <div class="message-cards">
-        <Card v-for="item in messages" :key="`mobile-${messageKey(item)}`" padding="lg" class="message-card" :class="{ 'row-highlight': messageKey(item) === highlightRowKey }">
+        <Card v-for="item in messages" :key="`mobile-${messageKey(item)}`" padding="lg" :class="messageKey(item) === highlightRowKey ? 'message-card row-highlight' : 'message-card'">
           <div class="message-card__head">
             <label><input class="brutal-checkbox" type="checkbox" :checked="isSelected(item)" @change="toggleSelection(item)" /> <strong>{{ typeLabel(item.type) }}</strong></label>
             <Badge :variant="statusType(item.status)" size="sm" dot>{{ statusLabel(item.status) }}</Badge>

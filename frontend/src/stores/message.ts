@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { updateMessageStatus } from '../api'
 
 export interface MessageItem {
   row_key?: string
@@ -62,13 +61,8 @@ export const useMessageStore = defineStore('message', () => {
         status: 'DELIVERED',
       })
 
-      if (localDeviceID && data.id && data.sender_device_id !== localDeviceID) {
-        void updateMessageStatus({
-          message_id: data.id,
-          device_id: localDeviceID,
-          status: 'READ',
-        })
-      }
+      // Receiving over WebSocket means delivered, not read. The client inbox
+      // marks a message as read only after the user copies or downloads it.
     }
 
     if (event.type === 'MESSAGE_STATUS_UPDATED' && event.data) {

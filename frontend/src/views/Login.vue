@@ -9,8 +9,8 @@
         </div>
       </header>
 
-      <div class="login-grid">
-        <section class="qr-panel">
+      <div class="login-grid" :class="{ 'login-grid--client': role === 'client' }">
+        <section v-if="role === 'server'" class="qr-panel">
           <p>{{ t('login.qrTip') }}</p>
           <div class="login-qr-wrap">
             <img :src="qrImage" :alt="t('login.qrAlt')" class="login-qr" />
@@ -51,7 +51,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { CircleAlert, LogIn } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
@@ -59,8 +59,9 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '../stores/auth'
 import { qrCodeURL, registerDevice, resolveApiErrorMessage } from '../api'
-import { isServerAccess } from '../utils/role'
+import { currentRole } from '../utils/role'
 
+const route = useRoute()
 const router = useRouter()
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
@@ -68,7 +69,8 @@ const deviceId = ref('')
 const password = ref('')
 const error = ref('')
 const language = ref(String(locale.value || 'zh-CN'))
-const entryURL = computed(() => `${window.location.origin}/`)
+const role = computed(() => currentRole(route.path))
+const entryURL = computed(() => `${window.location.origin}/client/inbox`)
 const qrImage = computed(() => qrCodeURL(entryURL.value))
 
 function changeLanguage(value: string) {
@@ -89,11 +91,13 @@ async function loginSubmit() {
     await registerDevice({
       id,
       display_name: id,
-      role: isServerAccess() ? 'server' : 'client',
+      role: role.value,
       platform: navigator.platform,
       browser: navigator.userAgent,
     })
-    await router.replace(isServerAccess() ? '/devices' : '/send')
+    const requested = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+    const safeRedirect = requested.startsWith(`/${role.value}/`) ? requested : ''
+    await router.replace(safeRedirect || (role.value === 'server' ? '/server/devices' : '/client/inbox'))
   } catch (err) {
     error.value = resolveApiErrorMessage(err, 'login.failed')
   }
@@ -101,13 +105,15 @@ async function loginSubmit() {
 </script>
 
 <style scoped>
-.login-wrap { width: min(860px, 94vw); }
+.login-wrap { display: grid; min-height: 100dvh; place-items: center; padding: 18px; }
+.login-card { width: min(860px, 94vw); }
 .login-card { overflow: hidden; }
 .login-head { display: flex; align-items: center; gap: 14px; padding-bottom: 18px; border-bottom: 3px solid var(--brutal-border-color); }
 .login-logo { width: 64px; height: 64px; object-fit: cover; border: 3px solid var(--brutal-border-color); border-radius: 6px; box-shadow: 4px 4px 0 var(--brutal-shadow-color); }
 .login-head p { margin: 0 0 3px; color: #9a4b1e; font-size: 10px; font-weight: 900; letter-spacing: .16em; }
 .login-head h1 { margin: 0; font-size: 34px; line-height: 1; }
 .login-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 28px; padding-top: 24px; }
+.login-grid--client { grid-template-columns: minmax(0, 460px); justify-content: center; }
 .qr-panel { display: grid; align-content: start; gap: 12px; }
 .qr-panel p { margin: 0; color: var(--brutal-muted-foreground); font-weight: 700; }
 .login-qr-wrap { display: grid; place-items: center; padding: 18px; border: 3px solid var(--brutal-border-color); border-radius: 7px; background: #fff; box-shadow: 5px 5px 0 var(--brutal-shadow-color); }
@@ -118,8 +124,8 @@ async function loginSubmit() {
 .login-submit { width: 100%; margin-top: 4px; }
 
 @media (max-width: 680px) {
-  .login-wrap { width: 100%; }
-  .login-card { padding: 18px; }
+  .login-wrap { padding: 12px; }
+  .login-card { width: 100%; padding: 18px; }
   .login-head { align-items: flex-start; }
   .login-logo { width: 52px; height: 52px; }
   .login-head h1 { font-size: 28px; }

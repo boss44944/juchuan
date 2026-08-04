@@ -1,21 +1,29 @@
-/**
- * 角色判断：区分「服务端」与「客户端」访问。
- *
- * - 服务端 = 在运行菊传的电脑本机访问（localhost / 127.0.0.1）
- * - 客户端 = 局域网内其他设备（手机）通过 IP 访问
- */
-export function isServerAccess(): boolean {
-  if (typeof window === 'undefined') return false
-  const h = window.location.hostname
-  return (
-    h === 'localhost' ||
-    h === '127.0.0.1' ||
-    h === '::1' ||
-    h === '[::1]' ||
-    h === ''
-  )
+export type AccessRole = 'server' | 'client'
+
+export function roleFromPath(path: string): AccessRole | null {
+  if (path === '/server' || path.startsWith('/server/')) return 'server'
+  if (path === '/client' || path.startsWith('/client/')) return 'client'
+  return null
 }
 
-export function currentRole(): 'server' | 'client' {
-  return isServerAccess() ? 'server' : 'client'
+/**
+ * Explicit /server and /client routes are authoritative. Hostname detection is
+ * retained only as a compatibility fallback for old bookmarks and the root URL.
+ */
+export function currentRole(path = typeof window === 'undefined' ? '' : window.location.pathname): AccessRole {
+  const routeRole = roleFromPath(path)
+  if (routeRole) return routeRole
+  if (typeof window === 'undefined') return 'client'
+  const hostname = window.location.hostname
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]' || hostname === ''
+    ? 'server'
+    : 'client'
+}
+
+export function isServerAccess(path?: string): boolean {
+  return currentRole(path) === 'server'
+}
+
+export function defaultRouteFor(role: AccessRole): string {
+  return role === 'server' ? '/server/devices' : '/client/inbox'
 }

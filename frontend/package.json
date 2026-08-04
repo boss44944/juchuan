@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/sync-backend-static.mjs"
+    "typecheck": "vue-tsc --noEmit",
+    "build": "npm run typecheck && vite build && node scripts/sync-backend-static.mjs"
   },
   "dependencies": {
     "@lucide/vue": "^1.28.0",
@@ -22,7 +23,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "latest",
-    "typescript": "latest",
-    "vite": "latest"
+    "typescript": "^5.9.3",
+    "vite": "latest",
+    "vue-tsc": "^3.1.3"
   }
 }

@@ -89,7 +89,7 @@ const toast = useToast()
 const store = useDeviceStore()
 const devices = computed(() => store.devices)
 const onlineCount = computed(() => devices.value.filter((device) => device.status === 'online').length)
-const entryURL = `${window.location.origin}/`
+const entryURL = `${window.location.origin}/client/inbox`
 const qrImage = computed(() => qrCodeURL(entryURL))
 const loading = ref(true)
 const loadError = ref('')
