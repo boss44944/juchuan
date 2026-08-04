@@ -31,4 +31,6 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/message/file", s.requireAuth(s.SendFileMessageHandler))
 	mux.HandleFunc("/api/messages", s.requireAuth(s.MessagesHandler))
 	mux.HandleFunc("/api/message/status", s.requireAuth(s.MessageStatusHandler))
+	mux.HandleFunc("/api/message/delete", s.requireAuth(s.DeleteMessageHandler))
+	mux.HandleFunc("/api/message/clear", s.requireAuth(s.ClearMessagesHandler))
 }

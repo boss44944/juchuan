@@ -2,7 +2,10 @@
   <section class="inbox-view" aria-labelledby="client-inbox-title">
     <header class="client-page-head">
       <div><p>JUCHUAN / INBOX</p><h1 id="client-inbox-title">{{ t('client.inbox.title') }}</h1></div>
-      <Button variant="outline" size="sm" :loading="loading" @click="loadInbox(1)"><RefreshCw :size="17" />{{ t('client.inbox.refresh') }}</Button>
+      <div class="client-page-head__actions">
+        <Button variant="outline" size="sm" :loading="loading" @click="loadInbox(1)"><RefreshCw :size="17" />{{ t('client.inbox.refresh') }}</Button>
+        <Button v-if="messages.length > 0" variant="danger" size="sm" @click="openClearAllConfirm"><Trash2 :size="17" />{{ t('client.inbox.clearAll') }}</Button>
+      </div>
     </header>
 
     <div class="inbox-summary">
@@ -27,42 +30,70 @@
     </div>
 
     <div v-else class="message-list" aria-live="polite">
-      <Card v-for="item in filteredMessages" :key="messageKey(item)" padding="default" :class="item.status !== 'READ' ? 'mobile-message mobile-message--unread' : 'mobile-message'">
-        <div class="mobile-message__top">
-          <span class="message-type" :class="`message-type--${item.type.toLowerCase()}`">
-            <MessageSquareText v-if="item.type === 'TEXT'" :size="20" /><FileIcon v-else :size="20" />
-          </span>
-          <div class="mobile-message__meta">
-            <strong>{{ item.type === 'TEXT' ? t('client.inbox.textMessage') : t('client.inbox.fileMessage') }}</strong>
-            <small>{{ formatTime(item.created_at) }}</small>
-          </div>
-          <Badge :variant="item.status === 'READ' ? 'success' : 'accent'" size="sm" dot>{{ statusLabel(item.status) }}</Badge>
+      <div v-for="item in filteredMessages" :key="messageKey(item)" class="swipe-wrapper" @touchstart.passive="onTouchStart(item, $event)" @touchmove="onTouchMove($event)" @touchend="onTouchEnd(item)">
+        <div class="swipe-content" :style="{ transform: `translateX(${swipeOffset(messageKey(item))})` }">
+          <Card padding="default" :class="item.status !== 'READ' ? 'mobile-message mobile-message--unread' : 'mobile-message'">
+            <div class="mobile-message__top">
+              <span class="message-type" :class="`message-type--${item.type.toLowerCase()}`">
+                <MessageSquareText v-if="item.type === 'TEXT'" :size="20" /><FileIcon v-else :size="20" />
+              </span>
+              <div class="mobile-message__meta">
+                <strong>{{ item.type === 'TEXT' ? t('client.inbox.textMessage') : t('client.inbox.fileMessage') }}</strong>
+                <small>{{ formatTime(item.created_at) }}</small>
+              </div>
+              <Badge :variant="item.status === 'READ' ? 'success' : 'accent'" size="sm" dot>{{ statusLabel(item.status) }}</Badge>
+            </div>
+
+            <p v-if="item.type === 'TEXT'" class="message-copy">{{ item.content || '—' }}</p>
+            <div v-else class="file-copy"><FileIcon :size="28" /><span><strong>{{ t('client.inbox.receivedFile') }}</strong><small>{{ shortFileID(item.file_id) }}</small></span></div>
+
+            <div class="mobile-message__from"><Monitor :size="15" /><span>{{ t('client.inbox.fromComputer') }}</span><code>{{ item.sender_device_id || 'server' }}</code></div>
+
+            <Button v-if="item.type === 'TEXT'" variant="primary" size="default" class="message-action" @click="copyText(item)"><Copy :size="19" />{{ t('client.inbox.copy') }}</Button>
+            <a v-else :href="fileURL(item)" class="download-action" download @click="markRead(item)"><Download :size="19" />{{ t('client.inbox.download') }}</a>
+          </Card>
         </div>
-
-        <p v-if="item.type === 'TEXT'" class="message-copy">{{ item.content || '—' }}</p>
-        <div v-else class="file-copy"><FileIcon :size="28" /><span><strong>{{ t('client.inbox.receivedFile') }}</strong><small>{{ shortFileID(item.file_id) }}</small></span></div>
-
-        <div class="mobile-message__from"><Monitor :size="15" /><span>{{ t('client.inbox.fromComputer') }}</span><code>{{ item.sender_device_id || 'server' }}</code></div>
-
-        <Button v-if="item.type === 'TEXT'" variant="primary" size="default" class="message-action" @click="copyText(item)"><Copy :size="19" />{{ t('client.inbox.copy') }}</Button>
-        <a v-else :href="fileURL(item)" class="download-action" download @click="markRead(item)"><Download :size="19" />{{ t('client.inbox.download') }}</a>
-      </Card>
+        <div class="swipe-action" @click="openDeleteConfirm(item)"><Trash2 :size="20" /></div>
+      </div>
     </div>
 
     <Button v-if="hasMore" variant="outline" size="lg" class="load-more" :loading="loadingMore" @click="loadMore">{{ t('client.inbox.loadMore') }}</Button>
+
+    <Teleport to="body">
+      <div v-if="deleteConfirm.show" class="confirm-overlay" @click.self="closeDeleteConfirm">
+        <div class="confirm-dialog">
+          <strong>{{ t('client.inbox.deleteTitle') }}</strong>
+          <p>{{ t('client.inbox.deleteConfirm') }}</p>
+          <div class="confirm-actions">
+            <Button variant="outline" size="sm" @click="closeDeleteConfirm">{{ t('client.inbox.cancel') }}</Button>
+            <Button variant="danger" size="sm" @click="confirmDelete">{{ t('client.inbox.confirmDelete') }}</Button>
+          </div>
+        </div>
+      </div>
+      <div v-if="clearAllConfirm" class="confirm-overlay" @click.self="clearAllConfirm = false">
+        <div class="confirm-dialog">
+          <strong>{{ t('client.inbox.clearAllTitle') }}</strong>
+          <p>{{ t('client.inbox.clearAllConfirm') }}</p>
+          <div class="confirm-actions">
+            <Button variant="outline" size="sm" @click="clearAllConfirm = false">{{ t('client.inbox.cancel') }}</Button>
+            <Button variant="danger" size="sm" :loading="clearing" @click="confirmClearAll">{{ t('client.inbox.confirmClearAll') }}</Button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { CircleAlert, Copy, Download, File as FileIcon, Inbox as InboxIcon, MessageSquareText, Monitor, RefreshCw } from '@lucide/vue'
+import { CircleAlert, Copy, Download, File as FileIcon, Inbox as InboxIcon, MessageSquareText, Monitor, RefreshCw, Trash2 } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useToast } from '@/composables/useToast'
 import { useMessageStore, type MessageItem } from '@/stores/message'
-import { downloadFileURL, getMessages, resolveApiErrorMessage, updateMessageStatus, type MessageListItem } from '@/api'
+import { clearMessages, deleteMessage, downloadFileURL, getMessages, resolveApiErrorMessage, updateMessageStatus, type MessageListItem } from '@/api'
 
 type InboxType = '' | 'TEXT' | 'FILE'
 const { t } = useI18n()
@@ -85,6 +116,7 @@ const tabs = computed(() => [
   { value: 'TEXT' as InboxType, label: t('client.inbox.text'), icon: MessageSquareText },
   { value: 'FILE' as InboxType, label: t('client.inbox.file'), icon: FileIcon },
 ])
+const swipeState = ref<{ id: string; startX: number; startY: number; currentX: number; dragging: boolean }>({ id: '', startX: 0, startY: 0, currentX: 0, dragging: false })
 
 onMounted(() => void loadInbox(1))
 
@@ -126,9 +158,94 @@ async function markRead(item: MessageItem) {
   try { await updateMessageStatus({ message_id: item.id, device_id: localID, status: 'READ' }); store.updateStatus(item.id, 'READ', localID) }
   catch (error) { toast.error(resolveApiErrorMessage(error, 'messagesPage.toast.markReadFailed')) }
 }
+function fallbackCopy(text: string): boolean {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0'
+  document.body.appendChild(textarea)
+  textarea.select()
+  const ok = document.execCommand('copy')
+  document.body.removeChild(textarea)
+  return ok
+}
 async function copyText(item: MessageItem) {
-  try { await navigator.clipboard.writeText(item.content || ''); await markRead(item); toast.success(t('client.inbox.copied')) }
-  catch { toast.error(t('client.inbox.copyFailed')) }
+  const text = item.content || ''
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else if (!fallbackCopy(text)) {
+      throw new Error('fallback failed')
+    }
+    await markRead(item)
+    toast.success(t('client.inbox.copied'))
+  } catch {
+    if (fallbackCopy(text)) {
+      await markRead(item)
+      toast.success(t('client.inbox.copied'))
+    } else {
+      toast.error(t('client.inbox.copyFailed'))
+    }
+  }
+}
+function onTouchStart(item: MessageItem, e: TouchEvent) {
+  const touch = e.touches[0]
+  swipeState.value = { id: messageKey(item), startX: touch.clientX, startY: touch.clientY, currentX: touch.clientX, dragging: false }
+}
+function onTouchMove(e: TouchEvent) {
+  if (!swipeState.value.id) return
+  const touch = e.touches[0]
+  const dx = touch.clientX - swipeState.value.startX
+  const dy = touch.clientY - swipeState.value.startY
+  if (!swipeState.value.dragging && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+    swipeState.value.dragging = true
+  }
+  if (swipeState.value.dragging) {
+    e.preventDefault()
+    swipeState.value.currentX = touch.clientX
+  }
+}
+function onTouchEnd(item: MessageItem) {
+  if (!swipeState.value.dragging) { swipeState.value.id = ''; return }
+  const dx = swipeState.value.currentX - swipeState.value.startX
+  if (dx < -80) { openDeleteConfirm(item) }
+  swipeState.value = { id: '', startX: 0, startY: 0, currentX: 0, dragging: false }
+}
+function swipeOffset(key: string): string {
+  if (swipeState.value.id !== key || !swipeState.value.dragging) return '0'
+  const dx = swipeState.value.currentX - swipeState.value.startX
+  return `${Math.min(0, Math.max(-120, dx))}px`
+}
+const deleteConfirm = ref<{ show: boolean; item: MessageItem | null }>({ show: false, item: null })
+function openDeleteConfirm(item: MessageItem) { deleteConfirm.value = { show: true, item } }
+function closeDeleteConfirm() { deleteConfirm.value = { show: false, item: null } }
+async function confirmDelete() {
+  const item = deleteConfirm.value.item
+  if (!item || !localID) return
+  try {
+    await deleteMessage({ message_id: item.id, device_id: localID })
+    store.removeMessage(messageKey(item))
+    toast.success(t('client.inbox.deleted'))
+  } catch (error) {
+    toast.error(resolveApiErrorMessage(error, 'client.inbox.deleteFailed'))
+  }
+  closeDeleteConfirm()
+}
+const clearAllConfirm = ref(false)
+const clearing = ref(false)
+function openClearAllConfirm() { clearAllConfirm.value = true }
+async function confirmClearAll() {
+  if (!localID) return
+  clearing.value = true
+  try {
+    await clearMessages({ device_id: localID })
+    store.clearMessages(localID)
+    total.value = 0
+    toast.success(t('client.inbox.clearedAll'))
+  } catch (error) {
+    toast.error(resolveApiErrorMessage(error, 'client.inbox.clearAllFailed'))
+  }
+  clearing.value = false
+  clearAllConfirm.value = false
 }
 </script>
 
@@ -137,6 +254,7 @@ async function copyText(item: MessageItem) {
 .client-page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
 .client-page-head p { margin: 0 0 4px; color: #9a4b1e; font-size: 9px; font-weight: 900; letter-spacing: .14em; }
 .client-page-head h1 { margin: 0; font-size: 30px; line-height: 1; }
+.client-page-head__actions { display: flex; gap: 8px; }
 .inbox-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .inbox-summary span { display: flex; align-items: baseline; gap: 6px; padding: 11px 13px; border: 2px solid var(--brutal-border-color); border-radius: 6px; background: #fff; font-size: 12px; font-weight: 900; }
 .inbox-summary strong { font-size: 23px; }
@@ -150,6 +268,9 @@ async function copyText(item: MessageItem) {
 .client-state--error { color: var(--brutal-destructive); }
 .state-pulse { width: 42px; height: 42px; border: 4px solid var(--brutal-border-color); border-right-color: var(--brutal-primary); border-radius: 50%; animation: spin .8s linear infinite; }
 .message-list { display: grid; gap: 14px; }
+.swipe-wrapper { position: relative; overflow: hidden; }
+.swipe-content { position: relative; z-index: 1; transition: transform 0.15s ease-out; }
+.swipe-action { position: absolute; top: 0; right: 0; bottom: 0; display: grid; width: 72px; place-items: center; background: var(--brutal-destructive, #dc2626); color: #fff; cursor: pointer; }
 .mobile-message { position: relative; display: grid; gap: 13px; box-shadow: 3px 3px 0 var(--brutal-shadow-color); }
 .mobile-message--unread::before { position: absolute; top: -3px; bottom: -3px; left: -3px; width: 7px; border: 2px solid var(--brutal-border-color); background: var(--brutal-secondary); content: ''; }
 .mobile-message__top { display: flex; align-items: center; gap: 10px; }
@@ -170,4 +291,9 @@ async function copyText(item: MessageItem) {
 .load-more { width: 100%; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .state-pulse { animation: none; } }
+.confirm-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.5); }
+.confirm-dialog { width: 90%; max-width: 340px; padding: 24px; border: 3px solid var(--brutal-border-color); border-radius: 8px; background: var(--brutal-bg); box-shadow: 6px 6px 0 var(--brutal-shadow-color); }
+.confirm-dialog strong { display: block; margin-bottom: 8px; font-size: 18px; }
+.confirm-dialog p { margin: 0 0 20px; color: var(--brutal-muted-foreground); font-size: 14px; }
+.confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
 </style>

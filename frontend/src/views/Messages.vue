@@ -37,6 +37,9 @@
         <span class="action-divider" />
         <Button variant="outline" size="sm" :disabled="selectedRows.length === 0" @click="markReadBatch">{{ t('messagesPage.actions.batchRead') }}</Button>
         <Button variant="secondary" size="sm" :disabled="selectedRows.length === 0" @click="retryBatch">{{ t('messagesPage.actions.batchRetry') }}</Button>
+        <Button variant="danger" size="sm" :disabled="selectedRows.length === 0" @click="deleteBatch">{{ t('messagesPage.actions.batchDelete') }}</Button>
+        <span class="action-divider" />
+        <Button variant="danger" size="sm" @click="openClearAllConfirm">{{ t('messagesPage.actions.clearAll') }}</Button>
       </div>
     </Card>
 
@@ -62,6 +65,7 @@
               <td><div class="row-actions">
                 <Button v-if="item.status !== 'READ' && canMarkRead(item)" variant="outline" size="sm" @click="markRead(item)">{{ t('messagesPage.actions.markRead') }}</Button>
                 <Button variant="secondary" size="sm" @click="retry(item)"><RefreshCw :size="15" aria-hidden="true" />{{ t('messagesPage.actions.retry') }}</Button>
+                <Button variant="danger" size="sm" @click="openDeleteConfirm(item)"><Trash2 :size="15" aria-hidden="true" /></Button>
               </div></td>
             </tr>
           </tbody>
@@ -81,23 +85,47 @@
           <div class="row-actions">
             <Button v-if="item.status !== 'READ' && canMarkRead(item)" variant="outline" size="sm" @click="markRead(item)">{{ t('messagesPage.actions.markRead') }}</Button>
             <Button variant="secondary" size="sm" @click="retry(item)">{{ t('messagesPage.actions.retry') }}</Button>
+            <Button variant="danger" size="sm" @click="openDeleteConfirm(item)"><Trash2 :size="15" /></Button>
           </div>
         </Card>
       </div>
     </template>
 
-    <nav v-if="pageCount > 1" class="pagination" aria-label="Pagination">
+    <nav class="pagination" aria-label="Pagination">
       <Button variant="outline" size="sm" :disabled="query.page <= 1" @click="refresh(query.page - 1)"><ChevronLeft :size="17" /></Button>
       <Button v-for="page in visiblePages" :key="page" :variant="page === query.page ? 'primary' : 'outline'" size="sm" @click="refresh(page)">{{ page }}</Button>
       <Button variant="outline" size="sm" :disabled="query.page >= pageCount" @click="refresh(query.page + 1)"><ChevronRight :size="17" /></Button>
     </nav>
+
+    <Teleport to="body">
+      <div v-if="deleteConfirm.show" class="confirm-overlay" @click.self="closeDeleteConfirm">
+        <div class="confirm-dialog">
+          <strong>{{ t('messagesPage.dialog.deleteTitle') }}</strong>
+          <p>{{ t('messagesPage.dialog.deleteConfirm') }}</p>
+          <div class="confirm-actions">
+            <Button variant="outline" size="sm" @click="closeDeleteConfirm">{{ t('messagesPage.dialog.cancel') }}</Button>
+            <Button variant="danger" size="sm" @click="confirmDelete">{{ t('messagesPage.dialog.confirmDelete') }}</Button>
+          </div>
+        </div>
+      </div>
+      <div v-if="clearAllConfirm" class="confirm-overlay" @click.self="clearAllConfirm = false">
+        <div class="confirm-dialog">
+          <strong>{{ t('messagesPage.dialog.clearAllTitle') }}</strong>
+          <p>{{ t('messagesPage.dialog.clearAllConfirm') }}</p>
+          <div class="confirm-actions">
+            <Button variant="outline" size="sm" @click="clearAllConfirm = false">{{ t('messagesPage.dialog.cancel') }}</Button>
+            <Button variant="danger" size="sm" :loading="clearing" @click="confirmClearAll">{{ t('messagesPage.dialog.confirmClearAll') }}</Button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ChevronLeft, ChevronRight, Download, RefreshCw, RotateCcw, Search } from '@lucide/vue'
+import { ChevronLeft, ChevronRight, Download, RefreshCw, RotateCcw, Search, Trash2 } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -105,7 +133,7 @@ import { Input } from '@/components/ui/input'
 import { useToast } from '@/composables/useToast'
 import { useMessageStore, type MessageItem } from '../stores/message'
 import { useDeviceStore } from '../stores/device'
-import { downloadFileURL, getMessages, resolveApiErrorMessage, sendFileMessage, sendTextMessage, updateMessageStatus } from '../api'
+import { clearMessages, deleteMessage, downloadFileURL, getMessages, resolveApiErrorMessage, sendFileMessage, sendTextMessage, updateMessageStatus } from '../api'
 
 interface MessageListRow {
   message_id: string
@@ -142,7 +170,24 @@ function fileURL(item: MessageItem) { return item.file_id ? downloadFileURL(item
 function statusType(status?: string): 'success' | 'accent' | 'outline' { return status === 'READ' ? 'success' : status === 'DELIVERED' ? 'accent' : 'outline' }
 function statusLabel(status?: string) { return status === 'READ' ? t('messagesPage.status.read') : status === 'DELIVERED' ? t('messagesPage.status.delivered') : t('messagesPage.status.created') }
 function typeLabel(type?: string) { return type === 'FILE' ? t('messagesPage.filters.typeFile') : t('messagesPage.filters.typeText') }
-function formatTime(value?: string) { if (!value) return '—'; const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toLocaleString() }
+function formatTime(value?: string) {
+  if (!value) return '—'
+  // 兼容 Go time.String() 长格式（如 "2026-08-04 00:34:20.140165 +0800 CST m=+..."），
+  // 只提取「日期 + 时:分」，避免把超长时间戳原样显示在列表里。
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/)
+  if (match) {
+    const [, y, m, d, h, min] = match
+    return `${y}-${m}-${d} ${h}:${min}`
+  }
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  const h = String(date.getHours()).padStart(2, '0')
+  const min = String(date.getMinutes()).padStart(2, '0')
+  return `${y}-${m}-${d} ${h}:${min}`
+}
 function canMarkRead(item: MessageItem) { const localID = localStorage.getItem('device_id') || ''; return !!localID && item.target_device_id === localID }
 function isSelected(item: MessageItem) { return selectedRows.value.some((row) => messageKey(row) === messageKey(item)) }
 function toggleSelection(item: MessageItem) { selectedRows.value = isSelected(item) ? selectedRows.value.filter((row) => messageKey(row) !== messageKey(item)) : [...selectedRows.value, item] }
@@ -193,6 +238,54 @@ async function retryBatch() {
   else toast.error(resolveApiErrorMessage(lastError, 'messagesPage.toast.batchRetryFailed'))
 }
 
+const deleteConfirm = ref<{ show: boolean; item: MessageItem | null }>({ show: false, item: null })
+function openDeleteConfirm(item: MessageItem) { deleteConfirm.value = { show: true, item } }
+function closeDeleteConfirm() { deleteConfirm.value = { show: false, item: null } }
+async function confirmDelete() {
+  const item = deleteConfirm.value.item
+  if (!item) return
+  try {
+    const localID = localStorage.getItem('device_id') || ''
+    await deleteMessage({ message_id: item.id, device_id: item.target_device_id || localID })
+    store.removeMessage(messageKey(item))
+    total.value = Math.max(0, total.value - 1)
+    toast.success(t('messagesPage.toast.deleteSuccess'))
+  } catch (error) {
+    toast.error(resolveApiErrorMessage(error, 'messagesPage.toast.deleteFailed'))
+  }
+  closeDeleteConfirm()
+}
+async function deleteBatch() {
+  if (!selectedRows.value.length) { toast.warning(t('messagesPage.toast.selectFirst')); return }
+  let success = 0; let failed = 0; let lastError: unknown = null
+  const localID = localStorage.getItem('device_id') || ''
+  for (const row of selectedRows.value) {
+    try { await deleteMessage({ message_id: row.id, device_id: row.target_device_id || localID }); store.removeMessage(messageKey(row)); success += 1 } catch (error) { lastError = error; failed += 1 }
+  }
+  total.value = Math.max(0, total.value - success)
+  selectedRows.value = []
+  if (success && !failed) toast.success(t('messagesPage.toast.batchDeleteSuccess', { count: success }))
+  else if (success) toast.warning(t('messagesPage.toast.batchPartial', { success, failed }))
+  else toast.error(resolveApiErrorMessage(lastError, 'messagesPage.toast.batchDeleteFailed'))
+}
+const clearAllConfirm = ref(false)
+const clearing = ref(false)
+function openClearAllConfirm() { clearAllConfirm.value = true }
+async function confirmClearAll() {
+  clearing.value = true
+  try {
+    const localID = localStorage.getItem('device_id') || ''
+    await clearMessages({ device_id: localID })
+    store.clearMessages(localID)
+    total.value = 0
+    toast.success(t('messagesPage.toast.clearAllSuccess'))
+  } catch (error) {
+    toast.error(resolveApiErrorMessage(error, 'messagesPage.toast.clearAllFailed'))
+  }
+  clearing.value = false
+  clearAllConfirm.value = false
+}
+
 function responseMessageID(data: unknown, fallback: string) {
   if (!data || typeof data !== 'object') return fallback
   const outer = data as Record<string, unknown>; const nested = outer.data && typeof outer.data === 'object' ? outer.data as Record<string, unknown> : outer
@@ -216,18 +309,24 @@ function flashHighlight(rowKey: string) { if (!rowKey) return; highlightRowKey.v
 .filter-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
 .action-divider { width: 3px; height: 30px; background: var(--brutal-border-color); }
 .message-table-wrap { overflow-x: auto; border: 3px solid var(--brutal-border-color); box-shadow: 5px 5px 0 var(--brutal-shadow-color); }
-.message-table { width: 100%; min-width: 1050px; border-collapse: collapse; background: var(--brutal-bg); }
+.message-table { width: 100%; min-width: 1200px; border-collapse: collapse; background: var(--brutal-bg); }
 .message-table th, .message-table td { padding: 11px 10px; border-right: 2px solid var(--brutal-border-color); border-bottom: 2px solid var(--brutal-border-color); text-align: left; vertical-align: middle; }
 .message-table th { background: var(--brutal-primary); font-size: 11px; font-weight: 950; letter-spacing: .05em; }
 .message-table tr:last-child td { border-bottom: 0; }
 .message-table th:last-child, .message-table td:last-child { border-right: 0; }
+.message-table td:last-child { min-width: 210px; }
 .content-cell { max-width: 280px; overflow-wrap: anywhere; }
 .content-cell a, .download-link { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; }
-.row-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.row-actions { display: flex; flex-wrap: nowrap; align-items: center; gap: 7px; white-space: nowrap; }
 .row-highlight { background: #fff0bd !important; animation: row-flash 650ms ease 2; }
 .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 22px; }
 .message-cards { display: none; }
 @keyframes row-flash { 50% { background: var(--brutal-accent); } }
+.confirm-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.5); }
+.confirm-dialog { width: 90%; max-width: 400px; padding: 24px; border: 3px solid var(--brutal-border-color); border-radius: 8px; background: var(--brutal-bg); box-shadow: 6px 6px 0 var(--brutal-shadow-color); }
+.confirm-dialog strong { display: block; margin-bottom: 8px; font-size: 18px; }
+.confirm-dialog p { margin: 0 0 20px; color: var(--brutal-muted-foreground); font-size: 14px; }
+.confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
 @media (max-width: 1100px) { .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 780px) {
@@ -245,6 +344,7 @@ function flashHighlight(rowKey: string) { if (!rowKey) return; highlightRowKey.v
   dt { color: var(--brutal-muted-foreground); font-size: 10px; font-weight: 900; }
   dd { margin: 3px 0 0; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
   .filter-actions :deep(button) { min-height: 44px; }
+  .row-actions { flex-wrap: wrap; }
   .row-actions :deep(button) { flex: 1 1 auto; min-height: 44px; }
 }
 </style>

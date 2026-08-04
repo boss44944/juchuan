@@ -43,6 +43,14 @@ export const useMessageStore = defineStore('message', () => {
     }
   }
 
+  function removeMessage(key: string) {
+    messages.value = messages.value.filter((item) => (item.row_key || `${item.id}:${item.target_device_id || ''}`) !== key)
+  }
+
+  function clearMessages(deviceId: string) {
+    messages.value = messages.value.filter((item) => item.target_device_id !== deviceId)
+  }
+
   function handleEvent(event: any) {
     if (event.type === 'MESSAGE_RECEIVED') {
       const data = event.data || {}
@@ -75,6 +83,8 @@ export const useMessageStore = defineStore('message', () => {
     addMessage,
     setMessages,
     updateStatus,
+    removeMessage,
+    clearMessages,
     handleEvent
   }
 })

@@ -7,14 +7,14 @@
       <button type="button" role="tab" :aria-selected="mode === 'file'" :class="{ active: mode === 'file' }" @click="mode = 'file'"><FileUp :size="20" />{{ t('client.inbox.file') }}</button>
     </div>
 
-    <Card v-if="mode === 'text'" padding="lg" class="send-panel">
+    <Card v-if="mode === 'text'" padding="default" class="send-panel">
       <div class="send-panel__title"><span><MessageSquareText :size="23" /></span><div><h2>{{ t('send.sendText') }}</h2><p>{{ t('client.send.textHint') }}</p></div></div>
       <Textarea v-model="content" size="lg" class="client-textarea" :placeholder="t('send.inputText')" :aria-label="t('send.inputText')" />
       <div class="character-count">{{ content.length }}</div>
       <Button variant="primary" size="lg" class="send-action" :loading="sending" :disabled="sending" @click="sendText"><SendIcon :size="20" />{{ t('client.send.sendToComputer') }}</Button>
     </Card>
 
-    <Card v-else padding="lg" class="send-panel">
+    <Card v-else padding="default" class="send-panel">
       <div class="send-panel__title"><span class="file-mark"><FileUp :size="23" /></span><div><h2>{{ t('send.sendFile') }}</h2><p>{{ t('client.send.fileHint') }}</p></div></div>
       <input ref="fileInput" class="visually-hidden" type="file" @change="selectFile" />
       <button type="button" class="file-picker" @click="fileInput?.click()">

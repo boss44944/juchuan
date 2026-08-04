@@ -190,3 +190,73 @@ func (s *Server) messageSenderID(messageID string) (string, error) {
 	}
 	return senderID, nil
 }
+
+type DeleteMessageRequest struct {
+	MessageID string `json:"message_id"`
+	DeviceID  string `json:"device_id"`
+}
+
+func (s *Server) DeleteMessageHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req DeleteMessageRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
+		return
+	}
+
+	req.MessageID = strings.TrimSpace(req.MessageID)
+	req.DeviceID = strings.TrimSpace(req.DeviceID)
+	if req.MessageID == "" || req.DeviceID == "" {
+		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
+		return
+	}
+
+	_, err := s.db.Exec(`DELETE FROM message_targets WHERE message_id=? AND device_id=?`, req.MessageID, req.DeviceID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "MESSAGE_DELETE_FAILED", nil)
+		return
+	}
+
+	var count int
+	_ = s.db.QueryRow(`SELECT COUNT(*) FROM message_targets WHERE message_id=?`, req.MessageID).Scan(&count)
+	if count == 0 {
+		_, _ = s.db.Exec(`DELETE FROM messages WHERE id=?`, req.MessageID)
+	}
+
+	WriteJSON(w, http.StatusOK, APIResponse{Success: true})
+}
+
+type ClearMessagesRequest struct {
+	DeviceID string `json:"device_id"`
+}
+
+func (s *Server) ClearMessagesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req ClearMessagesRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
+		return
+	}
+
+	req.DeviceID = strings.TrimSpace(req.DeviceID)
+	if req.DeviceID == "" {
+		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
+		return
+	}
+
+	_, err := s.db.Exec(`DELETE FROM message_targets WHERE device_id=?`, req.DeviceID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "MESSAGE_CLEAR_FAILED", nil)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, APIResponse{Success: true})
+}

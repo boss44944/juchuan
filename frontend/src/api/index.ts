@@ -149,6 +149,19 @@ export function updateMessageStatus(data: {
   return api.post('/message/status', data)
 }
 
+export function deleteMessage(data: {
+  message_id: string
+  device_id: string
+}) {
+  return api.post('/message/delete', data)
+}
+
+export function clearMessages(data: {
+  device_id: string
+}) {
+  return api.post('/message/clear', data)
+}
+
 export interface MessageQuery {
   page?: number
   size?: number
