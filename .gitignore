@@ -1,2 +1,18 @@
 frontend/node_modules/
 frontend/dist/
+
+# Build outputs
+backend/juchuan
+juchuan
+Juchuan.app/
+
+# macOS system files
+.DS_Store
+frontend/.DS_Store
+frontend/src/.DS_Store
+
+# Screenshots
+*.png
+
+# VS Code
+.vscode/
