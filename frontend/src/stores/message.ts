@@ -48,7 +48,7 @@ export const useMessageStore = defineStore('message', () => {
   }
 
   function clearMessages(deviceId: string) {
-    messages.value = messages.value.filter((item) => item.target_device_id !== deviceId)
+    messages.value = messages.value.filter((item) => item.sender_device_id !== deviceId && item.target_device_id !== deviceId)
   }
 
   function handleEvent(event: any) {

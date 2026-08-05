@@ -215,16 +215,32 @@ func (s *Server) DeleteMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := s.db.Exec(`DELETE FROM message_targets WHERE message_id=? AND device_id=?`, req.MessageID, req.DeviceID)
+	tx, err := s.db.Begin()
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "MESSAGE_DELETE_FAILED", nil)
 		return
 	}
+	defer tx.Rollback()
 
-	var count int
-	_ = s.db.QueryRow(`SELECT COUNT(*) FROM message_targets WHERE message_id=?`, req.MessageID).Scan(&count)
-	if count == 0 {
-		_, _ = s.db.Exec(`DELETE FROM messages WHERE id=?`, req.MessageID)
+	var senderID string
+	err = tx.QueryRow(`SELECT sender_device_id FROM messages WHERE id=?`, req.MessageID).Scan(&senderID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		WriteError(w, http.StatusInternalServerError, "MESSAGE_DELETE_FAILED", nil)
+		return
+	}
+
+	if err == nil && senderID == req.DeviceID {
+		if _, err = tx.Exec(`DELETE FROM message_targets WHERE message_id=?`, req.MessageID); err == nil {
+			_, err = tx.Exec(`DELETE FROM messages WHERE id=?`, req.MessageID)
+		}
+	} else {
+		if _, err = tx.Exec(`DELETE FROM message_targets WHERE message_id=? AND device_id=?`, req.MessageID, req.DeviceID); err == nil {
+			_, err = tx.Exec(`DELETE FROM messages WHERE id=? AND NOT EXISTS (SELECT 1 FROM message_targets WHERE message_id=?)`, req.MessageID, req.MessageID)
+		}
+	}
+	if err != nil || tx.Commit() != nil {
+		WriteError(w, http.StatusInternalServerError, "MESSAGE_DELETE_FAILED", nil)
+		return
 	}
 
 	WriteJSON(w, http.StatusOK, APIResponse{Success: true})
@@ -252,8 +268,23 @@ func (s *Server) ClearMessagesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := s.db.Exec(`DELETE FROM message_targets WHERE device_id=?`, req.DeviceID)
+	tx, err := s.db.Begin()
 	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "MESSAGE_CLEAR_FAILED", nil)
+		return
+	}
+	defer tx.Rollback()
+
+	if _, err = tx.Exec(`DELETE FROM message_targets WHERE message_id IN (SELECT id FROM messages WHERE sender_device_id=?)`, req.DeviceID); err == nil {
+		_, err = tx.Exec(`DELETE FROM messages WHERE sender_device_id=?`, req.DeviceID)
+	}
+	if err == nil {
+		_, err = tx.Exec(`DELETE FROM message_targets WHERE device_id=?`, req.DeviceID)
+	}
+	if err == nil {
+		_, err = tx.Exec(`DELETE FROM messages WHERE NOT EXISTS (SELECT 1 FROM message_targets WHERE message_id=messages.id)`)
+	}
+	if err != nil || tx.Commit() != nil {
 		WriteError(w, http.StatusInternalServerError, "MESSAGE_CLEAR_FAILED", nil)
 		return
 	}

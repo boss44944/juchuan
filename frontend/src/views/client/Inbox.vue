@@ -38,13 +38,16 @@
         @touchend="onTouchEnd(item)"
         @touchcancel="resetSwipe"
       >
-        <Button variant="danger" size="sm" class="swipe-action" :aria-label="t('client.inbox.delete')" @click="openDeleteConfirm(item)">
-          <Trash2 :size="20" />
+        <Button variant="danger" size="sm" class="swipe-action swipe-action--delete" :aria-label="t('client.inbox.delete')" tabindex="-1" aria-hidden="true">
+          <Trash2 :size="18" />{{ t('client.inbox.delete') }}
+        </Button>
+        <Button v-if="item.type === 'TEXT'" variant="outline" size="sm" class="swipe-action swipe-action--copy" :aria-label="t('client.inbox.copy')" tabindex="-1" aria-hidden="true">
+          <Copy :size="18" />{{ t('client.inbox.copy') }}
         </Button>
         <div
           class="swipe-content"
           :class="{ 'swipe-content--dragging': isSwiping(messageKey(item)) }"
-          :style="{ transform: `translateX(${swipeOffset(messageKey(item))})` }"
+          :style="{ transform: `translateX(${swipeOffset(messageKey(item), item.type === 'TEXT')})` }"
         >
           <div class="chat-row" :class="item.sender_device_id === localID ? 'chat-row--sent' : 'chat-row--received'">
             <ChatBubble
@@ -57,10 +60,6 @@
               </template>
               <template v-else>{{ item.content }}</template>
             </ChatBubble>
-            <div class="chat-tools">
-              <Button v-if="item.type === 'TEXT'" variant="outline" size="sm" @click="copyText(item)"><Copy :size="15" />{{ t('client.inbox.copy') }}</Button>
-              <Button variant="danger" size="sm" class="chat-delete" :aria-label="t('client.inbox.delete')" @click="openDeleteConfirm(item)"><Trash2 :size="15" /></Button>
-            </div>
           </div>
         </div>
       </div>
@@ -121,7 +120,7 @@ const messages = computed(() =>
 )
 const filteredMessages = computed(() => {
     const list = typeFilter.value ? messages.value.filter((item) => item.type === typeFilter.value) : [...messages.value]
-    return list.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
+    return list.sort((a, b) => messageTime(b.created_at) - messageTime(a.created_at))
 })
 const unreadCount = computed(() => store.messages.filter((item) => item.target_device_id === localID && item.status !== 'READ').length)
 const hasMore = computed(() => messages.value.length < total.value)
@@ -177,6 +176,15 @@ function formatTime(value?: string) {
   // Go time.String() may include a zone and monotonic suffix, which Date cannot parse.
   const match = value.match(/^\d{4}-\d{2}-\d{2}[T ](\d{2}):(\d{2})/)
   return match ? `${match[1]}:${match[2]}` : ''
+}
+function messageTime(value?: string) {
+  if (!value) return 0
+  const parsed = new Date(value).getTime()
+  if (!Number.isNaN(parsed)) return parsed
+
+  const normalized = value.match(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?/i)?.[0]?.replace(' ', 'T')
+  const fallback = normalized ? new Date(normalized).getTime() : Number.NaN
+  return Number.isNaN(fallback) ? 0 : fallback
 }
 function chatBubbleClass(item: MessageItem) {
   return item.sender_device_id === localID
@@ -264,6 +272,7 @@ function onTouchMove(event: TouchEvent) {
 function onTouchEnd(item: MessageItem) {
   const dx = swipeState.value.currentX - swipeState.value.startX
   if (swipeState.value.dragging && dx > 80) openDeleteConfirm(item)
+  else if (swipeState.value.dragging && dx < -80 && item.type === 'TEXT') void copyText(item)
   resetSwipe()
 }
 function resetSwipe() {
@@ -272,10 +281,10 @@ function resetSwipe() {
 function isSwiping(key: string) {
   return swipeState.value.id === key && swipeState.value.dragging
 }
-function swipeOffset(key: string) {
+function swipeOffset(key: string, canCopy: boolean) {
   if (!isSwiping(key)) return '0px'
   const dx = swipeState.value.currentX - swipeState.value.startX
-  return `${Math.max(0, Math.min(96, dx))}px`
+  return `${Math.max(canCopy ? -112 : 0, Math.min(112, dx))}px`
 }
 const deleteConfirm = ref<{ show: boolean; item: MessageItem | null }>({ show: false, item: null })
 function openDeleteConfirm(item: MessageItem) { deleteConfirm.value = { show: true, item } }
@@ -334,7 +343,9 @@ async function confirmClearAll() {
 .swipe-wrapper { position: relative; overflow: hidden; border-radius: var(--brutal-radius); touch-action: pan-y; }
 .swipe-content { position: relative; z-index: 1; background: var(--brutal-bg); transition: transform 150ms ease-out; will-change: transform; }
 .swipe-content--dragging { transition: none; }
-.swipe-action { position: absolute; z-index: 0; top: 0; left: 0; bottom: 0; width: 76px; height: 100%; border-radius: 0; box-shadow: none; }
+.swipe-action { position: absolute; z-index: 0; top: 0; bottom: 0; width: 104px; height: 100%; border-radius: 0; box-shadow: none; pointer-events: none; }
+.swipe-action--delete { left: 0; }
+.swipe-action--copy { right: 0; background: var(--brutal-accent); }
 .chat-row { display: flex; flex-direction: column; gap: 4px; max-width: 100%; }
 .chat-row--sent { align-items: flex-end; }
 .chat-row--received { align-items: flex-start; }
@@ -346,10 +357,6 @@ async function confirmClearAll() {
 :deep(.inbox-chat-bubble--sent) { background: var(--brutal-primary); }
 :deep(.inbox-chat-bubble--received) { background: #fff; }
 .chat-file { display: inline-flex; align-items: center; gap: 6px; color: inherit; font-weight: 600; text-decoration: underline; }
-.chat-tools { display: flex; align-items: center; gap: 6px; padding: 0 2px; }
-.chat-row--sent .chat-tools { justify-content: flex-end; }
-.chat-delete { width: 32px; min-width: 32px; height: 32px; padding: 0; }
-.chat-delete:focus-visible { outline: 3px solid var(--brutal-ring); outline-offset: 1px; }
 .load-more { width: 100%; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .state-pulse { animation: none; } .swipe-content { transition: none; } }
