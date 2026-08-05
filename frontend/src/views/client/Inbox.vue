@@ -47,7 +47,11 @@
           :style="{ transform: `translateX(${swipeOffset(messageKey(item))})` }"
         >
           <div class="chat-row" :class="item.sender_device_id === localID ? 'chat-row--sent' : 'chat-row--received'">
-            <ChatBubble :message="chatMessage(item)" :show-avatar="false">
+            <ChatBubble
+              :message="chatMessage(item)"
+              :show-avatar="false"
+              :class="chatBubbleClass(item)"
+            >
               <template v-if="item.type === 'FILE'">
                 <a :href="fileURL(item)" class="chat-file" download @click="markRead(item)"><Download :size="16" />{{ t('client.inbox.download') }}</a>
               </template>
@@ -100,7 +104,7 @@ import { useMessageStore, type MessageItem } from '@/stores/message'
 import { clearMessages, deleteMessage, downloadFileURL, getMessages, resolveApiErrorMessage, updateMessageStatus, type MessageListItem } from '@/api'
 
 type InboxType = '' | 'TEXT' | 'FILE'
-const { t } = useI18n()
+const { locale, t } = useI18n()
 const toast = useToast()
 const store = useMessageStore()
 const localID = (localStorage.getItem('device_id') || '').trim()
@@ -158,7 +162,27 @@ function changeType(value: InboxType) { typeFilter.value = value }
 function loadMore() { void loadInbox(page.value + 1, true) }
 function messageKey(item: MessageItem) { return item.row_key || `${item.id}:${item.target_device_id || ''}` }
 function fileURL(item: MessageItem) { return item.file_id ? downloadFileURL(item.file_id) : '#' }
-function formatTime(value?: string) { if (!value) return '—'; const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toLocaleString() }
+function formatTime(value?: string) {
+  if (!value) return ''
+
+  const date = new Date(value)
+  if (!Number.isNaN(date.getTime())) {
+    return new Intl.DateTimeFormat(locale.value, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).format(date)
+  }
+
+  // Go time.String() may include a zone and monotonic suffix, which Date cannot parse.
+  const match = value.match(/^\d{4}-\d{2}-\d{2}[T ](\d{2}):(\d{2})/)
+  return match ? `${match[1]}:${match[2]}` : ''
+}
+function chatBubbleClass(item: MessageItem) {
+  return item.sender_device_id === localID
+    ? 'inbox-chat-bubble inbox-chat-bubble--sent'
+    : 'inbox-chat-bubble inbox-chat-bubble--received'
+}
 function mapStatus(status?: string): ChatMessage['status'] {
   switch (status) {
     case 'READ': return 'read'
@@ -314,6 +338,13 @@ async function confirmClearAll() {
 .chat-row { display: flex; flex-direction: column; gap: 4px; max-width: 100%; }
 .chat-row--sent { align-items: flex-end; }
 .chat-row--received { align-items: flex-start; }
+:deep(.inbox-chat-bubble) {
+  min-width: 72px;
+  padding: 12px 16px;
+  overflow-wrap: anywhere;
+}
+:deep(.inbox-chat-bubble--sent) { background: var(--brutal-primary); }
+:deep(.inbox-chat-bubble--received) { background: #fff; }
 .chat-file { display: inline-flex; align-items: center; gap: 6px; color: inherit; font-weight: 600; text-decoration: underline; }
 .chat-tools { display: flex; align-items: center; gap: 6px; padding: 0 2px; }
 .chat-row--sent .chat-tools { justify-content: flex-end; }
