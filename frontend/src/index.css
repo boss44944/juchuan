@@ -1,6 +1,7 @@
 @layer theme, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
+@source "../node_modules/brutx-ui-vue/dist/chunks/ChatContainer-DxI1-cmJ.js";
 /* brutx-ui:start */
 @theme {
     --color-brutal-bg: var(--brutal-bg);

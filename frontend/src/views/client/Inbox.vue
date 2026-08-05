@@ -29,16 +29,35 @@
     </div>
 
     <div v-else class="chat-list" aria-live="polite">
-      <div v-for="item in filteredMessages" :key="messageKey(item)" class="chat-row" :class="item.sender_device_id === localID ? 'chat-row--sent' : 'chat-row--received'">
-        <ChatBubble :message="chatMessage(item)" :show-avatar="false">
-          <template v-if="item.type === 'FILE'">
-            <a :href="fileURL(item)" class="chat-file" download @click="markRead(item)"><Download :size="16" />{{ t('client.inbox.download') }}</a>
-          </template>
-          <template v-else>{{ item.content }}</template>
-        </ChatBubble>
-        <div class="chat-tools">
-          <Button v-if="item.type === 'TEXT'" variant="outline" size="sm" @click="copyText(item)"><Copy :size="15" />{{ t('client.inbox.copy') }}</Button>
-          <button type="button" class="chat-delete" :aria-label="t('client.inbox.delete')" @click="openDeleteConfirm(item)"><Trash2 :size="15" /></button>
+      <div
+        v-for="item in filteredMessages"
+        :key="messageKey(item)"
+        class="swipe-wrapper"
+        @touchstart.passive="onTouchStart(item, $event)"
+        @touchmove="onTouchMove"
+        @touchend="onTouchEnd(item)"
+        @touchcancel="resetSwipe"
+      >
+        <Button variant="danger" size="sm" class="swipe-action" :aria-label="t('client.inbox.delete')" @click="openDeleteConfirm(item)">
+          <Trash2 :size="20" />
+        </Button>
+        <div
+          class="swipe-content"
+          :class="{ 'swipe-content--dragging': isSwiping(messageKey(item)) }"
+          :style="{ transform: `translateX(${swipeOffset(messageKey(item))})` }"
+        >
+          <div class="chat-row" :class="item.sender_device_id === localID ? 'chat-row--sent' : 'chat-row--received'">
+            <ChatBubble :message="chatMessage(item)" :show-avatar="false">
+              <template v-if="item.type === 'FILE'">
+                <a :href="fileURL(item)" class="chat-file" download @click="markRead(item)"><Download :size="16" />{{ t('client.inbox.download') }}</a>
+              </template>
+              <template v-else>{{ item.content }}</template>
+            </ChatBubble>
+            <div class="chat-tools">
+              <Button v-if="item.type === 'TEXT'" variant="outline" size="sm" @click="copyText(item)"><Copy :size="15" />{{ t('client.inbox.copy') }}</Button>
+              <Button variant="danger" size="sm" class="chat-delete" :aria-label="t('client.inbox.delete')" @click="openDeleteConfirm(item)"><Trash2 :size="15" /></Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -75,7 +94,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CircleAlert, Copy, Download, File as FileIcon, Inbox as InboxIcon, MessageSquareText, RefreshCw, Trash2 } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
-import { ChatBubble, type ChatMessage } from '@/components/ui/chat-bubble'
+import { ChatBubble, type ChatMessage } from 'brutx-ui-vue/chat-bubble'
 import { useToast } from '@/composables/useToast'
 import { useMessageStore, type MessageItem } from '@/stores/message'
 import { clearMessages, deleteMessage, downloadFileURL, getMessages, resolveApiErrorMessage, updateMessageStatus, type MessageListItem } from '@/api'
@@ -92,6 +111,7 @@ const pageSize = 20
 const loading = ref(false)
 const loadingMore = ref(false)
 const loadError = ref('')
+const swipeState = ref({ id: '', startX: 0, startY: 0, currentX: 0, dragging: false })
 const messages = computed(() =>
     store.messages.filter((item) => item.sender_device_id === localID || item.target_device_id === localID)
 )
@@ -192,6 +212,47 @@ async function copyText(item: MessageItem) {
     }
   }
 }
+function onTouchStart(item: MessageItem, event: TouchEvent) {
+  const touch = event.touches[0]
+  if (!touch) return
+  swipeState.value = {
+    id: messageKey(item),
+    startX: touch.clientX,
+    startY: touch.clientY,
+    currentX: touch.clientX,
+    dragging: false,
+  }
+}
+function onTouchMove(event: TouchEvent) {
+  if (!swipeState.value.id) return
+  const touch = event.touches[0]
+  if (!touch) return
+  const dx = touch.clientX - swipeState.value.startX
+  const dy = touch.clientY - swipeState.value.startY
+  if (!swipeState.value.dragging && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+    swipeState.value.dragging = true
+  }
+  if (swipeState.value.dragging) {
+    event.preventDefault()
+    swipeState.value.currentX = touch.clientX
+  }
+}
+function onTouchEnd(item: MessageItem) {
+  const dx = swipeState.value.currentX - swipeState.value.startX
+  if (swipeState.value.dragging && dx > 80) openDeleteConfirm(item)
+  resetSwipe()
+}
+function resetSwipe() {
+  swipeState.value = { id: '', startX: 0, startY: 0, currentX: 0, dragging: false }
+}
+function isSwiping(key: string) {
+  return swipeState.value.id === key && swipeState.value.dragging
+}
+function swipeOffset(key: string) {
+  if (!isSwiping(key)) return '0px'
+  const dx = swipeState.value.currentX - swipeState.value.startX
+  return `${Math.max(0, Math.min(96, dx))}px`
+}
 const deleteConfirm = ref<{ show: boolean; item: MessageItem | null }>({ show: false, item: null })
 function openDeleteConfirm(item: MessageItem) { deleteConfirm.value = { show: true, item } }
 function closeDeleteConfirm() { deleteConfirm.value = { show: false, item: null } }
@@ -246,17 +307,21 @@ async function confirmClearAll() {
 .client-state--error { color: var(--brutal-destructive); }
 .state-pulse { width: 38px; height: 38px; border: 4px solid var(--brutal-border-color); border-right-color: var(--brutal-primary); border-radius: 50%; animation: spin .8s linear infinite; }
 .chat-list { display: flex; flex-direction: column; gap: 14px; }
+.swipe-wrapper { position: relative; overflow: hidden; border-radius: var(--brutal-radius); touch-action: pan-y; }
+.swipe-content { position: relative; z-index: 1; background: var(--brutal-bg); transition: transform 150ms ease-out; will-change: transform; }
+.swipe-content--dragging { transition: none; }
+.swipe-action { position: absolute; z-index: 0; top: 0; left: 0; bottom: 0; width: 76px; height: 100%; border-radius: 0; box-shadow: none; }
 .chat-row { display: flex; flex-direction: column; gap: 4px; max-width: 100%; }
 .chat-row--sent { align-items: flex-end; }
 .chat-row--received { align-items: flex-start; }
 .chat-file { display: inline-flex; align-items: center; gap: 6px; color: inherit; font-weight: 600; text-decoration: underline; }
 .chat-tools { display: flex; align-items: center; gap: 6px; padding: 0 2px; }
 .chat-row--sent .chat-tools { justify-content: flex-end; }
-.chat-delete { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 2px solid var(--brutal-border-color); border-radius: var(--brutal-radius); background: transparent; color: var(--brutal-destructive); cursor: pointer; }
+.chat-delete { width: 32px; min-width: 32px; height: 32px; padding: 0; }
 .chat-delete:focus-visible { outline: 3px solid var(--brutal-ring); outline-offset: 1px; }
 .load-more { width: 100%; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .state-pulse { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .state-pulse { animation: none; } .swipe-content { transition: none; } }
 .confirm-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.5); }
 .confirm-dialog { width: 90%; max-width: 340px; padding: 20px; border: 2px solid var(--brutal-border-color); border-radius: var(--brutal-radius); background: var(--brutal-bg); box-shadow: 4px 4px 0 var(--brutal-shadow-color); }
 .confirm-dialog strong { display: block; margin-bottom: 8px; font-size: 16px; }

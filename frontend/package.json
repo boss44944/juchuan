@@ -11,6 +11,7 @@
     "@lucide/vue": "^1.28.0",
     "@tailwindcss/vite": "^4.3.3",
     "axios": "latest",
+    "brutx-ui-vue": "0.9.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "pinia": "latest",
