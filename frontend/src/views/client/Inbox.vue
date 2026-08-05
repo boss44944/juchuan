@@ -18,54 +18,68 @@
       </button>
     </div>
 
-    <div v-if="loading && messages.length === 0" class="client-state" role="status">
-      <span class="state-pulse" /><span>{{ t('client.inbox.loading') }}</span>
-    </div>
-    <div v-else-if="loadError" class="client-state client-state--error" role="alert">
-      <CircleAlert :size="24" /><strong>{{ loadError }}</strong><Button variant="outline" size="sm" @click="loadInbox(1)">{{ t('client.inbox.retry') }}</Button>
-    </div>
-    <div v-else-if="messages.length === 0" class="client-state">
-      <InboxIcon :size="42" /><strong>{{ t('client.inbox.emptyTitle') }}</strong><p>{{ t('client.inbox.emptyHint') }}</p>
-    </div>
+    <section class="inbox-list-panel" :aria-busy="loading">
+      <div v-if="loading" class="client-state" role="status">
+        <span class="state-pulse" /><span>{{ t('client.inbox.loading') }}</span>
+      </div>
+      <div v-else-if="loadError" class="client-state client-state--error" role="alert">
+        <CircleAlert :size="24" /><strong>{{ loadError }}</strong><Button variant="outline" size="sm" @click="loadInbox(page)">{{ t('client.inbox.retry') }}</Button>
+      </div>
+      <div v-else-if="messages.length === 0" class="client-state">
+        <InboxIcon :size="42" /><strong>{{ t('client.inbox.emptyTitle') }}</strong><p>{{ t('client.inbox.emptyHint') }}</p>
+      </div>
 
-    <div v-else class="chat-list" aria-live="polite">
-      <div
-        v-for="item in filteredMessages"
-        :key="messageKey(item)"
-        class="swipe-wrapper"
-        @touchstart.passive="onTouchStart(item, $event)"
-        @touchmove="onTouchMove"
-        @touchend="onTouchEnd(item)"
-        @touchcancel="resetSwipe"
-      >
-        <Button variant="danger" size="sm" class="swipe-action swipe-action--delete" :aria-label="t('client.inbox.delete')" tabindex="-1" aria-hidden="true">
-          <Trash2 :size="18" />{{ t('client.inbox.delete') }}
-        </Button>
-        <Button v-if="item.type === 'TEXT'" variant="outline" size="sm" class="swipe-action swipe-action--copy" :aria-label="t('client.inbox.copy')" tabindex="-1" aria-hidden="true">
-          <Copy :size="18" />{{ t('client.inbox.copy') }}
-        </Button>
+      <div v-else class="chat-list" aria-live="polite">
         <div
-          class="swipe-content"
-          :class="{ 'swipe-content--dragging': isSwiping(messageKey(item)) }"
-          :style="{ transform: `translateX(${swipeOffset(messageKey(item), item.type === 'TEXT')})` }"
+          v-for="item in filteredMessages"
+          :key="messageKey(item)"
+          class="swipe-wrapper"
+          @touchstart.passive="onTouchStart(item, $event)"
+          @touchmove="onTouchMove"
+          @touchend="onTouchEnd(item)"
+          @touchcancel="resetSwipe"
         >
-          <div class="chat-row" :class="item.sender_device_id === localID ? 'chat-row--sent' : 'chat-row--received'">
-            <ChatBubble
-              :message="chatMessage(item)"
-              :show-avatar="false"
-              :class="chatBubbleClass(item)"
-            >
-              <template v-if="item.type === 'FILE'">
-                <a :href="fileURL(item)" class="chat-file" download @click="markRead(item)"><Download :size="16" />{{ t('client.inbox.download') }}</a>
-              </template>
-              <template v-else>{{ item.content }}</template>
-            </ChatBubble>
+          <Button variant="danger" size="sm" class="swipe-action swipe-action--delete" :aria-label="t('client.inbox.delete')" tabindex="-1" aria-hidden="true">
+            <Trash2 :size="18" />{{ t('client.inbox.delete') }}
+          </Button>
+          <Button v-if="item.type === 'TEXT'" variant="outline" size="sm" class="swipe-action swipe-action--copy" :aria-label="t('client.inbox.copy')" tabindex="-1" aria-hidden="true">
+            <Copy :size="18" />{{ t('client.inbox.copy') }}
+          </Button>
+          <div
+            class="swipe-content"
+            :class="{ 'swipe-content--dragging': isSwiping(messageKey(item)) }"
+            :style="{ transform: `translateX(${swipeOffset(messageKey(item), item.type === 'TEXT')})` }"
+          >
+            <div class="chat-row" :class="item.sender_device_id === localID ? 'chat-row--sent' : 'chat-row--received'">
+              <ChatBubble
+                :message="chatMessage(item)"
+                :show-avatar="false"
+                :class="chatBubbleClass(item)"
+              >
+                <template v-if="item.type === 'FILE'">
+                  <a :href="fileURL(item)" class="chat-file" download @click="markRead(item)"><Download :size="16" />{{ t('client.inbox.download') }}</a>
+                </template>
+                <template v-else>{{ item.content }}</template>
+              </ChatBubble>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <Button v-if="hasMore" variant="outline" size="lg" class="load-more" :loading="loadingMore" @click="loadMore">{{ t('client.inbox.loadMore') }}</Button>
+      <Pagination
+        v-if="total > pageSize"
+        :model-value="page"
+        :total="total"
+        :page-size="pageSize"
+        layout="prev, pager, next"
+        size="sm"
+        :sibling-count="0"
+        :show-first-last="false"
+        :disabled="loading"
+        class="inbox-pagination"
+        @update:model-value="loadInbox"
+      />
+    </section>
 
     <Teleport to="body">
       <div v-if="deleteConfirm.show" class="confirm-overlay" @click.self="closeDeleteConfirm">
@@ -98,6 +112,7 @@ import { useI18n } from 'vue-i18n'
 import { CircleAlert, Copy, Download, File as FileIcon, Inbox as InboxIcon, MessageSquareText, RefreshCw, Trash2 } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { ChatBubble, type ChatMessage } from 'brutx-ui-vue/chat-bubble'
+import { Pagination } from 'brutx-ui-vue/pagination'
 import { useToast } from '@/composables/useToast'
 import { useMessageStore, type MessageItem } from '@/stores/message'
 import { clearMessages, deleteMessage, downloadFileURL, getMessages, resolveApiErrorMessage, updateMessageStatus, type MessageListItem } from '@/api'
@@ -112,7 +127,6 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = 20
 const loading = ref(false)
-const loadingMore = ref(false)
 const loadError = ref('')
 const swipeState = ref({ id: '', startX: 0, startY: 0, currentX: 0, dragging: false })
 const messages = computed(() =>
@@ -123,7 +137,6 @@ const filteredMessages = computed(() => {
     return list.sort((a, b) => messageTime(b.created_at) - messageTime(a.created_at))
 })
 const unreadCount = computed(() => store.messages.filter((item) => item.target_device_id === localID && item.status !== 'READ').length)
-const hasMore = computed(() => messages.value.length < total.value)
 const tabs = computed(() => [
   { value: '' as InboxType, label: t('client.inbox.all'), icon: InboxIcon },
   { value: 'TEXT' as InboxType, label: t('client.inbox.text'), icon: MessageSquareText },
@@ -134,31 +147,24 @@ onMounted(() => void loadInbox(1))
 function toMessage(item: MessageListItem): MessageItem {
   return { row_key: `${item.message_id}:${item.target_device_id || ''}`, id: item.message_id, type: item.type, content: item.content, file_id: item.file_id, sender_device_id: item.sender_device_id, target_device_id: item.target_device_id, status: item.status, created_at: item.created_at }
 }
-async function loadInbox(nextPage: number, append = false) {
-  append ? loadingMore.value = true : loading.value = true
+async function loadInbox(nextPage: number) {
+  loading.value = true
   loadError.value = ''
   try {
-    const response = await getMessages({ page: nextPage, size: pageSize, device_id: localID })
+    const response = await getMessages({ page: nextPage, size: pageSize, device_id: localID, type: typeFilter.value })
     const data = response.data?.data || { items: [], total: 0 }
     const incoming = (Array.isArray(data.items) ? data.items : []).map((item: MessageListItem) => toMessage(item))
-    if (append) {
-      const merged = [...store.messages]
-      for (const item of incoming) {
-        const index = merged.findIndex((current) => messageKey(current) === messageKey(item))
-        if (index >= 0) merged[index] = item
-        else merged.push(item)
-      }
-      store.setMessages(merged)
-    } else {
-      store.setMessages(incoming)
-    }
+    store.setMessages(incoming)
     total.value = Number(data.total || 0)
     page.value = nextPage
   } catch (error) { loadError.value = resolveApiErrorMessage(error, 'messagesPage.toast.loadFailed') }
-  finally { loading.value = false; loadingMore.value = false }
+  finally { loading.value = false }
 }
-function changeType(value: InboxType) { typeFilter.value = value }
-function loadMore() { void loadInbox(page.value + 1, true) }
+function changeType(value: InboxType) {
+  if (typeFilter.value === value) return
+  typeFilter.value = value
+  void loadInbox(1)
+}
 function messageKey(item: MessageItem) { return item.row_key || `${item.id}:${item.target_device_id || ''}` }
 function fileURL(item: MessageItem) { return item.file_id ? downloadFileURL(item.file_id) : '#' }
 function formatTime(value?: string) {
@@ -294,7 +300,9 @@ async function confirmDelete() {
   if (!item || !localID) return
   try {
     await deleteMessage({ message_id: item.id, device_id: localID })
-    store.removeMessage(messageKey(item))
+    const remainingTotal = Math.max(0, total.value - 1)
+    const lastPage = Math.max(1, Math.ceil(remainingTotal / pageSize))
+    await loadInbox(Math.min(page.value, lastPage))
     toast.success(t('client.inbox.deleted'))
   } catch (error) {
     toast.error(resolveApiErrorMessage(error, 'client.inbox.deleteFailed'))
@@ -339,9 +347,10 @@ async function confirmClearAll() {
 .client-state p { margin: 0; color: var(--brutal-muted-foreground); }
 .client-state--error { color: var(--brutal-destructive); }
 .state-pulse { width: 38px; height: 38px; border: 4px solid var(--brutal-border-color); border-right-color: var(--brutal-primary); border-radius: 50%; animation: spin .8s linear infinite; }
+.inbox-list-panel { display: grid; gap: 16px; padding: 16px; border: 3px solid var(--brutal-border-color); border-radius: var(--brutal-radius); background: #fff; box-shadow: 4px 4px 0 var(--brutal-shadow-color); }
 .chat-list { display: flex; flex-direction: column; gap: 14px; }
 .swipe-wrapper { position: relative; overflow: hidden; border-radius: var(--brutal-radius); touch-action: pan-y; }
-.swipe-content { position: relative; z-index: 1; background: var(--brutal-bg); transition: transform 150ms ease-out; will-change: transform; }
+.swipe-content { position: relative; z-index: 1; background: #fff; transition: transform 150ms ease-out; will-change: transform; }
 .swipe-content--dragging { transition: none; }
 .swipe-action { position: absolute; z-index: 0; top: 0; bottom: 0; width: 104px; height: 100%; border-radius: 0; box-shadow: none; pointer-events: none; }
 .swipe-action--delete { left: 0; }
@@ -355,9 +364,9 @@ async function confirmClearAll() {
   overflow-wrap: anywhere;
 }
 :deep(.inbox-chat-bubble--sent) { background: var(--brutal-primary); }
-:deep(.inbox-chat-bubble--received) { background: #fff; }
+:deep(.inbox-chat-bubble--received) { background: var(--brutal-muted); }
 .chat-file { display: inline-flex; align-items: center; gap: 6px; color: inherit; font-weight: 600; text-decoration: underline; }
-.load-more { width: 100%; }
+.inbox-pagination { width: 100%; flex-wrap: wrap; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .state-pulse { animation: none; } .swipe-content { transition: none; } }
 .confirm-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.5); }
