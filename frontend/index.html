@@ -4,6 +4,50 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Juchuan 菊传</title>
+  <script>
+    // 移动端诊断与桌面模式检测（不依赖前端 bundle）
+    ;(function () {
+      function ready(fn) {
+        if (document.body) fn()
+        else document.addEventListener('DOMContentLoaded', fn)
+      }
+      var cssW = function () {
+        return document.documentElement ? document.documentElement.clientWidth : -1
+      }
+      var showDiag = location.search.includes('diag=1')
+      var isMobileScreen = window.screen && (window.screen.width <= 500 || window.screen.height <= 500)
+      var isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0
+      // 移动真机 + 触屏 + 布局视口过宽 → 浏览器处于桌面版模式
+      if (isMobileScreen && isTouch && cssW() > 780) {
+        ready(function () {
+          var b = document.createElement('div')
+          b.style.cssText =
+            'position:fixed;top:0;left:0;right:0;z-index:99998;padding:10px;background:#7f1d1d;color:#fff;font:600 13px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,.3);'
+          b.textContent =
+            '⚠️ 检测到浏览器「桌面版网站」模式（视口宽 ' + cssW() + 'px）。请在浏览器菜单中关闭「桌面版网站」后刷新。'
+          document.body.insertBefore(b, document.body.firstChild)
+        })
+      }
+      // ?diag=1 时显示详细诊断条
+      if (showDiag) {
+        var vp = document.querySelector('meta[name="viewport"]')
+        var info =
+          'DIAG screen=' + screen.width + 'x' + screen.height +
+          ' inner=' + window.innerWidth + 'x' + window.innerHeight +
+          ' clientW=' + cssW() +
+          ' dpr=' + window.devicePixelRatio +
+          ' vp=' + (vp ? vp.getAttribute('content') : '(none)') +
+          ' UA=' + navigator.userAgent
+        ready(function () {
+          var div = document.createElement('div')
+          div.style.cssText =
+            'position:fixed;top:0;left:0;right:0;z-index:99999;padding:8px;background:#0f172a;color:#ffd75e;font:11px monospace;white-space:pre-wrap;word-break:break-all;'
+          div.textContent = info
+          document.body.insertBefore(div, document.body.firstChild)
+        })
+      }
+    })()
+  </script>
 </head>
 <body>
   <div id="app"></div>

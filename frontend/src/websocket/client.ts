@@ -3,6 +3,7 @@ export type WSHandler = (message: any) => void
 let socket: WebSocket | null = null
 const handlers: WSHandler[] = []
 let reconnectTimer: number | null = null
+let shouldReconnect = false
 
 function getDeviceId() {
   const value = localStorage.getItem('device_id')
@@ -10,6 +11,7 @@ function getDeviceId() {
 }
 
 export function connectWebSocket() {
+  shouldReconnect = true
   if (socket) return
   const deviceId = getDeviceId()
   if (!deviceId) return
@@ -24,13 +26,23 @@ export function connectWebSocket() {
 
   socket.onclose = () => {
     socket = null
-    if (reconnectTimer == null) {
+    if (shouldReconnect && reconnectTimer == null) {
       reconnectTimer = window.setTimeout(() => {
         reconnectTimer = null
         connectWebSocket()
       }, 1500)
     }
   }
+}
+
+export function disconnectWebSocket() {
+  shouldReconnect = false
+  if (reconnectTimer != null) {
+    window.clearTimeout(reconnectTimer)
+    reconnectTimer = null
+  }
+  socket?.close()
+  socket = null
 }
 
 export function onWebSocketMessage(handler: WSHandler) {

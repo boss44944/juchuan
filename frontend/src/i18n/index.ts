@@ -56,7 +56,18 @@ const messages = {
     },
     send: {
       title: '发送',
+      subtitle: '在局域网内，把文字或文件送到附近设备',
       selectTargets: '选择设备',
+      targetHint: '可以同时选择多个接收设备',
+      selectedCount: '已选 {selected} / {total}',
+      clientTarget: '发送到电脑',
+      clientTitle: '发送到电脑',
+      clientHint: '内容会直接发送到运行菊传的电脑',
+      clientDesc: '手机（客户端）发送的文字或文件，将直接送达电脑上的菊传服务端',
+      noDevices: '暂时没有可用设备',
+      textHint: '内容会原样发送到所选设备',
+      fileHint: '先上传文件，再创建发送消息',
+      fileEmpty: '尚未选择文件',
       inputText: '输入文字',
       sendText: '发送文字',
       selectFile: '选择文件',
@@ -67,6 +78,25 @@ const messages = {
         fileRequired: '请先选择文件',
         textSent: '文字已发送',
         fileSent: '文件已发送'
+      }
+    },
+    client: {
+      home: '返回手机收件箱',
+      navigation: '手机端导航',
+      inbox: {
+        title: '收件箱', refresh: '刷新', total: '条消息', unread: '条未读', filter: '筛选消息',
+        all: '全部', text: '文字', file: '文件', loading: '正在读取消息…', retry: '重新加载',
+        emptyTitle: '还没有收到消息', emptyHint: '电脑发来的文字和文件会出现在这里',
+        textMessage: '文字消息', fileMessage: '文件消息', receivedFile: '电脑发来的文件',
+        fromComputer: '来自电脑', me: '我', delete: '删除', copy: '复制文字', download: '下载文件', copied: '文字已复制',
+        copyFailed: '复制失败，请长按文字复制', loadMore: '加载更多',
+        deleted: '消息已删除', deleteFailed: '删除失败', deleteTitle: '删除消息', deleteConfirm: '确定要删除这条消息吗？此操作不可撤销。', cancel: '取消', confirmDelete: '删除',
+        clearAll: '清空', clearAllTitle: '清空所有消息', clearAllConfirm: '确定要清空所有消息吗？此操作不可撤销。', confirmClearAll: '清空所有', clearedAll: '所有消息已清空', clearAllFailed: '清空失败'
+      },
+      send: {
+        title: '发送到电脑', target: '当前电脑', chooseType: '选择发送类型',
+        textHint: '粘贴或输入文字，点击按钮直接发送', fileHint: '从手机中选择一个文件发送到电脑',
+        fileEmpty: '支持手机系统文件选择器', sendToComputer: '发送到电脑', localOnly: '仅在当前局域网内传输'
       }
     },
     messagesPage: {
@@ -85,8 +115,10 @@ const messages = {
       actions: {
         batchRead: '批量标记已读',
         batchRetry: '批量重发',
+        batchDelete: '批量删除',
         markRead: '标记已读',
-        retry: '重发'
+        retry: '重发',
+        clearAll: '清空所有'
       },
       table: {
         time: '时间',
@@ -115,7 +147,22 @@ const messages = {
         selectFirst: '请先选择消息',
         batchRetrySuccess: '已重发 {count} 条消息',
         batchRetryFailed: '批量重发失败',
-        batchPartial: '操作完成：成功 {success} 条，失败 {failed} 条'
+        batchPartial: '操作完成：成功 {success} 条，失败 {failed} 条',
+        deleteSuccess: '消息已删除',
+        deleteFailed: '删除失败',
+        batchDeleteSuccess: '已删除 {count} 条消息',
+        batchDeleteFailed: '批量删除失败',
+        clearAllSuccess: '所有消息已清空',
+        clearAllFailed: '清空失败'
+      },
+      dialog: {
+        deleteTitle: '删除消息',
+        deleteConfirm: '确定要删除这条消息吗？此操作不可撤销。',
+        cancel: '取消',
+        confirmDelete: '删除',
+        clearAllTitle: '清空所有消息',
+        clearAllConfirm: '确定要清空所有消息吗？此操作不可撤销。',
+        confirmClearAll: '清空所有'
       }
     },
     configPage: {
@@ -151,6 +198,8 @@ const messages = {
       FILE_NOT_FOUND: '文件不存在',
       MESSAGE_REQUIRED: '消息内容或目标设备不能为空',
       MESSAGE_SAVE_FAILED: '消息保存失败',
+      MESSAGE_DELETE_FAILED: '消息删除失败',
+      MESSAGE_CLEAR_FAILED: '消息清空失败',
       MESSAGE_LIST_FAILED: '消息列表加载失败',
       NOT_FOUND: '请求的资源不存在',
       CONFLICT: '请求冲突，请重试',
@@ -211,7 +260,18 @@ const messages = {
     },
     send: {
       title: 'Send',
+      subtitle: 'Send text or files to nearby devices on your local network',
       selectTargets: 'Select Devices',
+      targetHint: 'You can choose more than one receiving device',
+      selectedCount: '{selected} / {total} selected',
+      clientTarget: 'To Computer',
+      clientTitle: 'Send to Computer',
+      clientHint: 'Content is sent directly to the computer running Juchuan',
+      clientDesc: 'Text or files sent from your phone are delivered straight to the Juchuan server on your computer',
+      noDevices: 'No devices are available yet',
+      textHint: 'Your text is delivered unchanged to the selected devices',
+      fileHint: 'The file is uploaded before the transfer message is created',
+      fileEmpty: 'No file selected',
       inputText: 'Enter text',
       sendText: 'Send Text',
       selectFile: 'Choose File',
@@ -222,6 +282,25 @@ const messages = {
         fileRequired: 'Please choose a file first',
         textSent: 'Text sent',
         fileSent: 'File sent'
+      }
+    },
+    client: {
+      home: 'Back to mobile inbox',
+      navigation: 'Mobile navigation',
+      inbox: {
+        title: 'Inbox', refresh: 'Refresh', total: 'messages', unread: 'unread', filter: 'Filter messages',
+        all: 'All', text: 'Text', file: 'Files', loading: 'Loading messages…', retry: 'Try Again',
+        emptyTitle: 'No messages yet', emptyHint: 'Text and files sent from your computer will appear here',
+        textMessage: 'Text message', fileMessage: 'File message', receivedFile: 'File from computer',
+        fromComputer: 'From computer', me: 'Me', delete: 'Delete', copy: 'Copy Text', download: 'Download File', copied: 'Text copied',
+        copyFailed: 'Copy failed. Touch and hold the text to copy it.', loadMore: 'Load More',
+        deleted: 'Message deleted', deleteFailed: 'Delete failed', deleteTitle: 'Delete Message', deleteConfirm: 'Are you sure you want to delete this message? This action cannot be undone.', cancel: 'Cancel', confirmDelete: 'Delete',
+        clearAll: 'Clear All', clearAllTitle: 'Clear All Messages', clearAllConfirm: 'Are you sure you want to clear all messages? This action cannot be undone.', confirmClearAll: 'Clear All', clearedAll: 'All messages cleared', clearAllFailed: 'Failed to clear messages'
+      },
+      send: {
+        title: 'Send to Computer', target: 'Current computer', chooseType: 'Choose transfer type',
+        textHint: 'Paste or type text, then send it directly', fileHint: 'Choose a file from your phone to send to the computer',
+        fileEmpty: 'Uses your phone file picker', sendToComputer: 'Send to Computer', localOnly: 'Transfers only on your current local network'
       }
     },
     messagesPage: {
@@ -240,8 +319,10 @@ const messages = {
       actions: {
         batchRead: 'Mark Selected as Read',
         batchRetry: 'Retry Selected',
+        batchDelete: 'Delete Selected',
         markRead: 'Mark Read',
-        retry: 'Retry'
+        retry: 'Retry',
+        clearAll: 'Clear All'
       },
       table: {
         time: 'Time',
@@ -270,7 +351,22 @@ const messages = {
         selectFirst: 'Please select messages first',
         batchRetrySuccess: 'Resent {count} messages',
         batchRetryFailed: 'Batch resend failed',
-        batchPartial: 'Done: {success} succeeded, {failed} failed'
+        batchPartial: 'Done: {success} succeeded, {failed} failed',
+        deleteSuccess: 'Message deleted',
+        deleteFailed: 'Delete failed',
+        batchDeleteSuccess: 'Deleted {count} messages',
+        batchDeleteFailed: 'Batch delete failed',
+        clearAllSuccess: 'All messages cleared',
+        clearAllFailed: 'Failed to clear messages'
+      },
+      dialog: {
+        deleteTitle: 'Delete Message',
+        deleteConfirm: 'Are you sure you want to delete this message? This action cannot be undone.',
+        cancel: 'Cancel',
+        confirmDelete: 'Delete',
+        clearAllTitle: 'Clear All Messages',
+        clearAllConfirm: 'Are you sure you want to clear all messages? This action cannot be undone.',
+        confirmClearAll: 'Clear All'
       }
     },
     configPage: {
@@ -306,6 +402,8 @@ const messages = {
       FILE_NOT_FOUND: 'File not found',
       MESSAGE_REQUIRED: 'Message content or targets are required',
       MESSAGE_SAVE_FAILED: 'Failed to save message',
+      MESSAGE_DELETE_FAILED: 'Failed to delete message',
+      MESSAGE_CLEAR_FAILED: 'Failed to clear messages',
       MESSAGE_LIST_FAILED: 'Failed to load message list',
       NOT_FOUND: 'Requested resource was not found',
       CONFLICT: 'Request conflict, please retry',
@@ -366,7 +464,18 @@ const messages = {
     },
     send: {
       title: '送信',
+      subtitle: 'ローカルネットワーク上の近くのデバイスへテキストやファイルを送信',
       selectTargets: 'デバイスを選択',
+      targetHint: '複数の受信デバイスを選択できます',
+      selectedCount: '{selected} / {total} 件選択済み',
+      clientTarget: 'PCへ送信',
+      clientTitle: 'PCへ送信',
+      clientHint: '菊伝を実行中のPCへ直接送信されます',
+      clientDesc: 'スマホ（クライアント）から送信したテキストやファイルは、PC上の菊伝サーバーへ直接届きます',
+      noDevices: '利用できるデバイスがありません',
+      textHint: '入力した内容を選択したデバイスへそのまま送信します',
+      fileHint: 'ファイルをアップロードしてから送信メッセージを作成します',
+      fileEmpty: 'ファイルが選択されていません',
       inputText: 'テキストを入力',
       sendText: 'テキスト送信',
       selectFile: 'ファイル選択',
@@ -377,6 +486,25 @@ const messages = {
         fileRequired: '先にファイルを選択してください',
         textSent: 'テキストを送信しました',
         fileSent: 'ファイルを送信しました'
+      }
+    },
+    client: {
+      home: 'モバイル受信箱に戻る',
+      navigation: 'モバイルナビゲーション',
+      inbox: {
+        title: '受信箱', refresh: '更新', total: '件', unread: '件未読', filter: 'メッセージを絞り込む',
+        all: 'すべて', text: 'テキスト', file: 'ファイル', loading: 'メッセージを読み込み中…', retry: '再読み込み',
+        emptyTitle: 'メッセージはまだありません', emptyHint: 'PCから送信されたテキストやファイルがここに表示されます',
+        textMessage: 'テキストメッセージ', fileMessage: 'ファイルメッセージ', receivedFile: 'PCからのファイル',
+        fromComputer: 'PCから', me: '私', delete: '削除', copy: 'テキストをコピー', download: 'ファイルをダウンロード', copied: 'コピーしました',
+        copyFailed: 'コピーできませんでした。テキストを長押ししてください。', loadMore: 'さらに読み込む',
+        deleted: 'メッセージを削除しました', deleteFailed: '削除に失敗しました', deleteTitle: 'メッセージを削除', deleteConfirm: 'このメッセージを削除しますか？この操作は元に戻せません。', cancel: 'キャンセル', confirmDelete: '削除',
+        clearAll: 'すべて削除', clearAllTitle: 'すべてのメッセージを削除', clearAllConfirm: 'すべてのメッセージを削除しますか？この操作は元に戻せません。', confirmClearAll: 'すべて削除', clearedAll: 'すべてのメッセージを削除しました', clearAllFailed: '削除に失敗しました'
+      },
+      send: {
+        title: 'PCへ送信', target: '現在のPC', chooseType: '送信タイプを選択',
+        textHint: 'テキストを入力または貼り付けて直接送信します', fileHint: 'スマホからファイルを選びPCへ送信します',
+        fileEmpty: 'スマホのファイル選択を使用します', sendToComputer: 'PCへ送信', localOnly: '現在のローカルネットワーク内だけで転送します'
       }
     },
     messagesPage: {
@@ -395,8 +523,10 @@ const messages = {
       actions: {
         batchRead: '一括既読',
         batchRetry: '一括再送',
+        batchDelete: '一括削除',
         markRead: '既読にする',
-        retry: '再送'
+        retry: '再送',
+        clearAll: 'すべて削除'
       },
       table: {
         time: '時間',
@@ -425,7 +555,22 @@ const messages = {
         selectFirst: '先にメッセージを選択してください',
         batchRetrySuccess: '{count} 件を再送しました',
         batchRetryFailed: '一括再送に失敗しました',
-        batchPartial: '完了: 成功 {success} 件、失敗 {failed} 件'
+        batchPartial: '完了: 成功 {success} 件、失敗 {failed} 件',
+        deleteSuccess: 'メッセージを削除しました',
+        deleteFailed: '削除に失敗しました',
+        batchDeleteSuccess: '{count} 件を削除しました',
+        batchDeleteFailed: '一括削除に失敗しました',
+        clearAllSuccess: 'すべてのメッセージを削除しました',
+        clearAllFailed: '削除に失敗しました'
+      },
+      dialog: {
+        deleteTitle: 'メッセージを削除',
+        deleteConfirm: 'このメッセージを削除しますか？この操作は元に戻せません。',
+        cancel: 'キャンセル',
+        confirmDelete: '削除',
+        clearAllTitle: 'すべてのメッセージを削除',
+        clearAllConfirm: 'すべてのメッセージを削除しますか？この操作は元に戻せません。',
+        confirmClearAll: 'すべて削除'
       }
     },
     configPage: {
@@ -461,6 +606,8 @@ const messages = {
       FILE_NOT_FOUND: 'ファイルが見つかりません',
       MESSAGE_REQUIRED: 'メッセージ内容または送信先が必要です',
       MESSAGE_SAVE_FAILED: 'メッセージ保存に失敗しました',
+      MESSAGE_DELETE_FAILED: 'メッセージの削除に失敗しました',
+      MESSAGE_CLEAR_FAILED: 'メッセージの一括削除に失敗しました',
       MESSAGE_LIST_FAILED: 'メッセージ一覧の取得に失敗しました',
       NOT_FOUND: '対象リソースが見つかりません',
       CONFLICT: 'リクエストが競合しています。再試行してください',

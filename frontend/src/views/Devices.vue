@@ -1,192 +1,194 @@
 <template>
-  <section class="view-panel">
-    <header class="panel-header">
-      <div>
-        <h2 class="panel-title">{{ t('menu.devices') }}</h2>
-        <p class="panel-subtitle">NODE TOPOLOGY</p>
-      </div>
-      <div class="chip-group">
-        <span class="stat-chip"><strong>{{ devices.length }}</strong>{{ t('devices.columns.name') }}</span>
-        <span class="stat-chip"><strong>{{ onlineCount }}</strong>{{ t('devices.status.online') }}</span>
-        <span class="stat-chip"><strong>{{ offlineCount }}</strong>{{ t('devices.status.offline') }}</span>
-      </div>
-    </header>
-
-    <section class="entry-panel">
+  <section class="page-surface devices-view">
+    <Card padding="lg" class="entry-panel">
       <div class="entry-meta">
-        <p class="entry-label">{{ t('devices.entryTitle') }}</p>
-        <a :href="entryURL" target="_blank" rel="noreferrer" class="entry-link">{{ entryURL }}</a>
-        <el-button size="small" @click="copyAddress">{{ t('devices.copyAddress') }}</el-button>
+        <span class="step-marker">ACCESS</span>
+        <h3>{{ t('devices.entryTitle') }}</h3>
+        <a :href="entryURL" target="_blank" rel="noreferrer">{{ entryURL }}</a>
+        <div class="entry-actions">
+          <Button variant="outline" size="sm" @click="copyAddress">
+            <Copy :size="17" aria-hidden="true" />{{ t('devices.copyAddress') }}
+          </Button>
+          <span class="stat-chip"><strong>{{ devices.length }}</strong>{{ t('devices.columns.name') }}</span>
+          <span class="stat-chip stat-chip--online"><strong>{{ onlineCount }}</strong>{{ t('devices.status.online') }}</span>
+        </div>
       </div>
       <div class="entry-qr-wrap">
         <img :src="qrImage" :alt="t('devices.qrAlt')" class="entry-qr" />
       </div>
-    </section>
+    </Card>
 
-    <div class="table-scroll">
-      <el-table :data="devices" min-width="640">
-        <el-table-column prop="display_name" :label="t('devices.columns.name')" />
-        <el-table-column prop="platform" :label="t('devices.columns.platform')" />
-        <el-table-column :label="t('devices.columns.status')">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 'online' ? 'success' : 'info'">
-              {{ scope.row.status === 'online' ? t('devices.status.online') : t('devices.status.offline') }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('devices.columns.actions')" width="220">
-          <template #default="scope">
-            <el-button size="small" @click="rename(scope.row.id)">{{ t('devices.actions.rename') }}</el-button>
-            <el-button size="small" type="danger" @click="remove(scope.row.id)">{{ t('devices.actions.remove') }}</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+    <div v-if="loading" class="loading-state" role="status">{{ t('messagesPage.status.created') }}…</div>
+    <div v-else-if="loadError" class="empty-state" role="alert">{{ loadError }}</div>
+    <div v-else-if="devices.length === 0" class="empty-state">{{ t('send.noDevices') }}</div>
+
+    <div v-else class="device-grid">
+      <Card v-for="device in devices" :key="device.id" padding="lg" class="device-card">
+        <div class="device-card__head">
+          <span class="device-icon"><MonitorSmartphone :size="24" aria-hidden="true" /></span>
+          <Badge :variant="device.status === 'online' ? 'success' : 'outline'" size="sm" dot>
+            {{ device.status === 'online' ? t('devices.status.online') : t('devices.status.offline') }}
+          </Badge>
+        </div>
+        <div>
+          <h3>{{ device.display_name }}</h3>
+          <p>{{ device.platform || '—' }}</p>
+          <code>{{ device.id }}</code>
+        </div>
+        <div class="device-actions">
+          <Button variant="outline" size="sm" @click="openRename(device.id)">
+            <Pencil :size="16" aria-hidden="true" />{{ t('devices.actions.rename') }}
+          </Button>
+          <Button variant="danger" size="sm" @click="openRemove(device.id)">
+            <Trash2 :size="16" aria-hidden="true" />{{ t('devices.actions.remove') }}
+          </Button>
+        </div>
+      </Card>
+    </div>
+
+    <div v-if="dialog.kind" class="modal-backdrop" @click.self="closeDialog">
+      <section ref="dialogElement" class="modal-card" role="dialog" aria-modal="true" :aria-labelledby="dialogTitleID" @keydown.esc="closeDialog">
+        <h3 :id="dialogTitleID">{{ dialog.kind === 'rename' ? t('devices.dialog.renameTitle') : t('devices.dialog.removeTitle') }}</h3>
+        <template v-if="dialog.kind === 'rename'">
+          <p>{{ t('devices.dialog.renameInput') }}</p>
+          <Input ref="renameInput" v-model="dialog.name" :aria-label="t('devices.dialog.renameInput')" @keyup.enter="confirmDialog" />
+        </template>
+        <p v-else>{{ t('devices.dialog.removeConfirm') }}</p>
+        <div class="modal-actions">
+          <Button variant="outline" @click="closeDialog">{{ t('messagesPage.filters.reset') }}</Button>
+          <Button :variant="dialog.kind === 'remove' ? 'danger' : 'primary'" :loading="dialog.busy" @click="confirmDialog">
+            {{ dialog.kind === 'remove' ? t('devices.actions.remove') : t('devices.actions.rename') }}
+          </Button>
+        </div>
+      </section>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Copy, MonitorSmartphone, Pencil, Trash2 } from '@lucide/vue'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { useToast } from '@/composables/useToast'
 import { useDeviceStore } from '../stores/device'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { qrCodeURL, renameDevice, removeDevice, resolveApiErrorMessage } from '../api'
 
 const { t } = useI18n()
+const toast = useToast()
 const store = useDeviceStore()
 const devices = computed(() => store.devices)
-const onlineCount = computed(() => devices.value.filter((d) => d.status === 'online').length)
-const offlineCount = computed(() => Math.max(devices.value.length - onlineCount.value, 0))
-const entryURL = `${window.location.origin}/`
+const onlineCount = computed(() => devices.value.filter((device) => device.status === 'online').length)
+const entryURL = `${window.location.origin}/client/inbox`
 const qrImage = computed(() => qrCodeURL(entryURL))
+const loading = ref(true)
+const loadError = ref('')
+const dialogElement = ref<HTMLElement | null>(null)
+const renameInput = ref<{ focus: () => void } | null>(null)
+const dialogTitleID = 'device-dialog-title'
+const dialog = reactive({ kind: '' as '' | 'rename' | 'remove', id: '', name: '', busy: false })
 
 onMounted(async () => {
-  await store.load()
+  try {
+    await store.load()
+  } catch (error) {
+    loadError.value = resolveApiErrorMessage(error)
+  } finally {
+    loading.value = false
+  }
 })
 
-async function rename(id: string) {
-  const target = devices.value.find((d) => d.id === id)
+async function openRename(id: string) {
+  const target = devices.value.find((device) => device.id === id)
   if (!target) return
+  Object.assign(dialog, { kind: 'rename', id, name: target.display_name, busy: false })
+  await nextTick()
+  renameInput.value?.focus()
+}
 
+async function openRemove(id: string) {
+  Object.assign(dialog, { kind: 'remove', id, name: '', busy: false })
+  await nextTick()
+  dialogElement.value?.focus()
+}
+
+function closeDialog() {
+  if (dialog.busy) return
+  Object.assign(dialog, { kind: '', id: '', name: '', busy: false })
+}
+
+async function confirmDialog() {
+  if (!dialog.kind || !dialog.id || dialog.busy) return
+  dialog.busy = true
   try {
-    const value = await ElMessageBox.prompt(t('devices.dialog.renameInput'), t('devices.dialog.renameTitle'), {
-      inputValue: target.display_name,
-    })
-    const displayName = value.value.trim()
-    if (!displayName) {
-      return
+    if (dialog.kind === 'rename') {
+      const displayName = dialog.name.trim()
+      if (!displayName) return
+      await renameDevice({ id: dialog.id, display_name: displayName })
+      await store.load()
+      toast.success(t('devices.toast.renamed'))
+    } else {
+      await removeDevice({ id: dialog.id })
+      store.removeDevice(dialog.id)
+      toast.success(t('devices.toast.removed'))
     }
-    await renameDevice({ id, display_name: displayName })
-    await store.load()
-    ElMessage.success(t('devices.toast.renamed'))
-  } catch (err: any) {
-    if (err === 'cancel' || err === 'close' || err?.action === 'cancel' || err?.action === 'close') {
-      return
-    }
-    ElMessage.error(resolveApiErrorMessage(err))
+    closeDialogAfterSuccess()
+  } catch (error) {
+    toast.error(resolveApiErrorMessage(error))
+  } finally {
+    dialog.busy = false
   }
 }
 
-async function remove(id: string) {
-  try {
-    await ElMessageBox.confirm(t('devices.dialog.removeConfirm'), t('devices.dialog.removeTitle'))
-    await removeDevice({ id })
-    store.removeDevice(id)
-    ElMessage.success(t('devices.toast.removed'))
-  } catch (err: any) {
-    if (err === 'cancel' || err === 'close' || err?.action === 'cancel' || err?.action === 'close') {
-      return
-    }
-    ElMessage.error(resolveApiErrorMessage(err))
-  }
+function closeDialogAfterSuccess() {
+  Object.assign(dialog, { kind: '', id: '', name: '', busy: false })
 }
 
 async function copyAddress() {
   try {
     await navigator.clipboard.writeText(entryURL)
-    ElMessage.success(t('devices.copySuccess'))
+    toast.success(t('devices.copySuccess'))
   } catch {
-    ElMessage.warning(entryURL)
+    toast.warning(entryURL)
   }
 }
 </script>
 
 <style scoped>
-.chip-group {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.stat-chip--online { background: #dbe9b8; }
+.entry-panel { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; background: var(--brutal-accent); }
+.entry-meta { display: grid; justify-items: start; gap: 8px; min-width: 0; }
+.entry-meta h3 { margin: 0; font-size: 16px; }
+.entry-meta a { word-break: break-all; font-weight: 600; }
+.entry-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.step-marker { padding: 3px 7px; border: 2px solid var(--brutal-border-color); background: var(--brutal-bg); font-size: 10px; font-weight: 600; letter-spacing: .12em; }
+.entry-qr-wrap { flex: 0 0 auto; padding: 6px; border: 2px solid var(--brutal-border-color); background: #fff; }
+.entry-qr { display: block; width: 104px; height: 104px; padding: 5px; background: #fff; }
+.device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.device-card { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.device-card__head { display: flex; align-items: center; justify-content: space-between; }
+.device-icon { display: grid; width: 40px; height: 40px; place-items: center; border: 2px solid var(--brutal-border-color); background: var(--brutal-primary); box-shadow: 2px 2px 0 var(--brutal-shadow-color); }
+.device-card h3 { margin: 0 0 5px; font-size: 16px; overflow-wrap: anywhere; }
+.device-card p { margin: 0 0 8px; color: var(--brutal-muted-foreground); }
+.device-card code { display: block; overflow: hidden; color: var(--brutal-muted-foreground); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.device-actions { display: flex; flex-wrap: nowrap; gap: 9px; margin-top: auto; }
+.device-actions :deep(button) { flex: 1 1 auto; white-space: nowrap; }
+
+@media (max-width: 700px) {
+  .panel-header, .entry-panel { flex-direction: column; }
+  .entry-panel { align-items: stretch; }
+  .entry-qr-wrap { align-self: center; }
 }
 
-.entry-panel {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid rgba(239, 176, 78, 0.22);
-  border-radius: 6px;
-  background: rgba(28, 21, 15, 0.5);
-  padding: 10px;
-  margin-bottom: 12px;
-}
-
-.entry-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.entry-label {
-  margin: 0;
-  color: #d0ba93;
-  font-size: 12px;
-}
-
-.entry-link {
-  font-size: 13px;
-  color: #f5d79b;
-  word-break: break-all;
-}
-
-.entry-qr-wrap {
-  border: 1px solid rgba(239, 176, 78, 0.2);
-  border-radius: 8px;
-  background: rgba(15, 12, 9, 0.44);
-  padding: 6px;
-}
-
-.entry-qr {
-  width: 92px;
-  height: 92px;
-  border-radius: 6px;
-  border: 1px solid rgba(223, 169, 73, 0.46);
-  background:
-    radial-gradient(circle at 24% 20%, rgba(255, 248, 230, 0.9), transparent 46%),
-    repeating-linear-gradient(16deg, rgba(222, 187, 121, 0.08) 0 1px, rgba(0, 0, 0, 0) 1px 7px),
-    #fff5e3;
-  box-shadow:
-    0 4px 10px rgba(35, 19, 8, 0.22),
-    inset 0 0 0 1px rgba(255, 236, 196, 0.68);
-  padding: 5px;
-}
-
-.table-scroll {
-  overflow-x: auto;
-}
-
-@media (max-width: 860px) {
-  .entry-panel {
-    align-items: flex-start;
-  }
-
-  .entry-qr {
-    width: 78px;
-    height: 78px;
-  }
-
-  .table-scroll :deep(.el-table) {
-    width: 640px;
-  }
+@media (max-width: 520px) {
+  .device-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .device-actions :deep(button) { flex: 1 1 0; min-height: 44px; }
+  .entry-meta :deep(button) { width: 100%; min-height: 44px; }
+  .entry-actions { align-items: stretch; }
+  .entry-actions .stat-chip { flex: 1 1 45%; justify-content: center; }
 }
 </style>

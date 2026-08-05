@@ -44,7 +44,7 @@ frontend/
 Vue3
 Vite
 TypeScript
-Element Plus
+BrutxUI（按需复制组件源码）
 Pinia
 Vue Router
 vue-i18n
@@ -56,7 +56,7 @@ package.json 已经有：
 * vue
 * vue-router
 * pinia
-* element-plus
+* BrutxUI 源码组件（`frontend/src/components/ui`）
 * vue-i18n
 * vite
 

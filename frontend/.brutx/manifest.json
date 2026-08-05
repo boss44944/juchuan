@@ -1,0 +1,133 @@
+{
+    "version": 1,
+    "components": {
+        "locale-zh-cn": {
+            "name": "locale-zh-cn",
+            "registrySource": "https://raw.githubusercontent.com/lidaixingchen/brutxui-vue3/main/packages/registry/registry",
+            "integrity": "sha256-6b8387cc24b2f99f2f596383f9e45d426c5dc49e1b23554b54b933b155f5e958",
+            "installedContentHash": "sha256-6b8387cc24b2f99f2f596383f9e45d426c5dc49e1b23554b54b933b155f5e958",
+            "version": "latest",
+            "installedAt": "2026-08-03T13:24:41.020Z",
+            "files": [
+                "src/locales/zh-CN.ts",
+                "src/locales/types.ts"
+            ],
+            "dependencies": [],
+            "registryDependencies": [],
+            "examples": []
+        },
+        "button": {
+            "name": "button",
+            "registrySource": "https://raw.githubusercontent.com/lidaixingchen/brutxui-vue3/main/packages/registry/registry",
+            "integrity": "sha256-4a856e73a6d2c45065cfd8b179a689d1479c91e4a836ecd6a038e27ab9f16627",
+            "installedContentHash": "sha256-bc5f7ddec741ef749bb3fbd769c08777c7671704b5deadd73e9fd19396d5f4ba",
+            "version": "latest",
+            "installedAt": "2026-08-03T13:24:41.020Z",
+            "files": [
+                "src/components/ui/button/Button.vue",
+                "src/components/ui/button/button-variants.ts",
+                "src/components/ui/button/shared-button-variants.ts",
+                "src/components/ui/button/index.ts",
+                "src/components/brutx/shared/hooks/useGlitchEffect.ts",
+                "src/components/brutx/shared/hooks/useLocale.ts",
+                "src/components/brutx/shared/hooks/useReducedMotion.ts",
+                "src/components/brutx/shared/lib/icon-size-variants.ts",
+                "src/components/brutx/shared/lib/defaults.ts",
+                "src/components/brutx/shared/lib/brutal-interaction-variants.ts",
+                "src/components/brutx/shared/lib/env.ts"
+            ],
+            "dependencies": [
+                "@lucide/vue",
+                "reka-ui"
+            ],
+            "registryDependencies": [
+                "locale-zh-cn"
+            ],
+            "category": "action",
+            "examples": []
+        },
+        "card": {
+            "name": "card",
+            "registrySource": "https://raw.githubusercontent.com/lidaixingchen/brutxui-vue3/main/packages/registry/registry",
+            "integrity": "sha256-e3da26d2b690349a5d0ad15f6ef2a855abd68c046f25fb3a9d0d832eccebe1a6",
+            "installedContentHash": "sha256-742b08e9c8a2fe99bf06d2a30824d5a6e361e9f786d9d38860f33c423d4952a2",
+            "version": "latest",
+            "installedAt": "2026-08-03T13:24:41.020Z",
+            "files": [
+                "src/components/ui/card/Card.vue",
+                "src/components/ui/card/CardContent.vue",
+                "src/components/ui/card/CardDescription.vue",
+                "src/components/ui/card/CardFooter.vue",
+                "src/components/ui/card/CardHeader.vue",
+                "src/components/ui/card/CardTitle.vue",
+                "src/components/ui/card/card-variants.ts",
+                "src/components/ui/card/index.ts"
+            ],
+            "dependencies": [],
+            "registryDependencies": [],
+            "category": "layout",
+            "examples": []
+        },
+        "input": {
+            "name": "input",
+            "registrySource": "https://raw.githubusercontent.com/lidaixingchen/brutxui-vue3/main/packages/registry/registry",
+            "integrity": "sha256-848438638a43150c0f691d0fb3e3c08a07175e23e0eb111104387234af56d42f",
+            "installedContentHash": "sha256-41979f018b291c8706a63b296e1c88d5c45479cfb412e85e39d7d9b1162b3934",
+            "version": "latest",
+            "installedAt": "2026-08-03T13:24:41.020Z",
+            "files": [
+                "src/components/ui/input/Input.vue",
+                "src/components/ui/input/input-variants.ts",
+                "src/components/ui/input/shared-input-variants.ts",
+                "src/components/ui/input/index.ts",
+                "src/components/brutx/shared/hooks/useClearable.ts"
+            ],
+            "dependencies": [],
+            "registryDependencies": [
+                "locale-zh-cn"
+            ],
+            "category": "form",
+            "examples": []
+        },
+        "textarea": {
+            "name": "textarea",
+            "registrySource": "https://raw.githubusercontent.com/lidaixingchen/brutxui-vue3/main/packages/registry/registry",
+            "integrity": "sha256-e5ad1bca677af1c7073ae97e917ea56ed8a368d93fddad48747e5f0033a6fed1",
+            "installedContentHash": "sha256-278d0b68d627a66f694c9b2ca1fb09492e21e89de6b177a1b050722d1c87db40",
+            "version": "latest",
+            "installedAt": "2026-08-03T13:24:41.020Z",
+            "files": [
+                "src/components/ui/textarea/Textarea.vue",
+                "src/components/ui/textarea/textarea-variants.ts",
+                "src/components/ui/textarea/index.ts"
+            ],
+            "dependencies": [],
+            "registryDependencies": [
+                "input",
+                "locale-zh-cn"
+            ],
+            "category": "form",
+            "examples": []
+        },
+        "badge": {
+            "name": "badge",
+            "registrySource": "https://raw.githubusercontent.com/lidaixingchen/brutxui-vue3/main/packages/registry/registry",
+            "integrity": "sha256-0c18da022a0d84603cdcf9f022a8ae564df2904bb0ae8e25c03212ebecffe11c",
+            "installedContentHash": "sha256-9d18b44b653cfcebcb63159c14392816a40518cb56f6cd0226d1234826044733",
+            "version": "latest",
+            "installedAt": "2026-08-03T13:24:41.020Z",
+            "files": [
+                "src/components/ui/badge/Badge.vue",
+                "src/components/ui/badge/badge-variants.ts",
+                "src/components/ui/badge/index.ts",
+                "src/components/brutx/shared/lib/chip-variants.ts"
+            ],
+            "dependencies": [],
+            "registryDependencies": [
+                "locale-zh-cn"
+            ],
+            "category": "feedback",
+            "examples": []
+        }
+    }
+}

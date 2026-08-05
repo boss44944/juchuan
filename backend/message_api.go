@@ -17,6 +17,33 @@ type SendTextRequest struct {
 	Targets        []string `json:"targets"`
 }
 
+// resolveMessageTargets 把请求中的目标设备解析为最终的设备 ID 列表。
+// 特殊值 "server" 会展开为所有 role=server 的设备（即运行菊传的电脑），
+// 供手机（客户端）直接发送给电脑服务端使用。
+func (s *Server) resolveMessageTargets(reqTargets []string) []string {
+	out := make([]string, 0, len(reqTargets))
+	seen := make(map[string]bool)
+	add := func(id string) {
+		if id != "" && !seen[id] {
+			seen[id] = true
+			out = append(out, id)
+		}
+	}
+	for _, id := range reqTargets {
+		id = strings.TrimSpace(id)
+		if id == "server" {
+			for _, d := range s.devices.List() {
+				if d.Role == "server" {
+					add(d.ID)
+				}
+			}
+			continue
+		}
+		add(id)
+	}
+	return out
+}
+
 func (s *Server) SendTextMessageHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -29,8 +56,14 @@ func (s *Server) SendTextMessageHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	req.Content = strings.TrimSpace(req.Content)
-	if req.Content == "" || len(req.Targets) == 0 {
+	if req.Content == "" {
 		WriteError(w, http.StatusBadRequest, "MESSAGE_REQUIRED", nil)
+		return
+	}
+
+	targets := s.resolveMessageTargets(req.Targets)
+	if len(targets) == 0 {
+		WriteError(w, http.StatusBadRequest, "MESSAGE_TARGET_REQUIRED", nil)
 		return
 	}
 
@@ -40,7 +73,7 @@ func (s *Server) SendTextMessageHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	for _, id := range req.Targets {
+	for _, id := range targets {
 		_ = SaveMessageTarget(s.db, &MessageTarget{
 			MessageID: message.ID,
 			DeviceID:  id,
@@ -81,8 +114,14 @@ func (s *Server) SendFileMessageHandler(w http.ResponseWriter, r *http.Request) 
 		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
 		return
 	}
-	if req.FileID == "" || len(req.Targets) == 0 {
+	if req.FileID == "" {
 		WriteError(w, http.StatusBadRequest, "MESSAGE_REQUIRED", nil)
+		return
+	}
+
+	targets := s.resolveMessageTargets(req.Targets)
+	if len(targets) == 0 {
+		WriteError(w, http.StatusBadRequest, "MESSAGE_TARGET_REQUIRED", nil)
 		return
 	}
 
@@ -99,7 +138,7 @@ func (s *Server) SendFileMessageHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	for _, id := range req.Targets {
+	for _, id := range targets {
 		_ = SaveMessageTarget(s.db, &MessageTarget{MessageID: message.ID, DeviceID: id, Status: "CREATED"})
 		err := s.hub.SendTo(id, WSMessage{Type: "MESSAGE_RECEIVED", Data: message})
 		if err == nil {
@@ -150,4 +189,105 @@ func (s *Server) messageSenderID(messageID string) (string, error) {
 		return "", err
 	}
 	return senderID, nil
+}
+
+type DeleteMessageRequest struct {
+	MessageID string `json:"message_id"`
+	DeviceID  string `json:"device_id"`
+}
+
+func (s *Server) DeleteMessageHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req DeleteMessageRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
+		return
+	}
+
+	req.MessageID = strings.TrimSpace(req.MessageID)
+	req.DeviceID = strings.TrimSpace(req.DeviceID)
+	if req.MessageID == "" || req.DeviceID == "" {
+		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
+		return
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "MESSAGE_DELETE_FAILED", nil)
+		return
+	}
+	defer tx.Rollback()
+
+	var senderID string
+	err = tx.QueryRow(`SELECT sender_device_id FROM messages WHERE id=?`, req.MessageID).Scan(&senderID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		WriteError(w, http.StatusInternalServerError, "MESSAGE_DELETE_FAILED", nil)
+		return
+	}
+
+	if err == nil && senderID == req.DeviceID {
+		if _, err = tx.Exec(`DELETE FROM message_targets WHERE message_id=?`, req.MessageID); err == nil {
+			_, err = tx.Exec(`DELETE FROM messages WHERE id=?`, req.MessageID)
+		}
+	} else {
+		if _, err = tx.Exec(`DELETE FROM message_targets WHERE message_id=? AND device_id=?`, req.MessageID, req.DeviceID); err == nil {
+			_, err = tx.Exec(`DELETE FROM messages WHERE id=? AND NOT EXISTS (SELECT 1 FROM message_targets WHERE message_id=?)`, req.MessageID, req.MessageID)
+		}
+	}
+	if err != nil || tx.Commit() != nil {
+		WriteError(w, http.StatusInternalServerError, "MESSAGE_DELETE_FAILED", nil)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, APIResponse{Success: true})
+}
+
+type ClearMessagesRequest struct {
+	DeviceID string `json:"device_id"`
+}
+
+func (s *Server) ClearMessagesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req ClearMessagesRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
+		return
+	}
+
+	req.DeviceID = strings.TrimSpace(req.DeviceID)
+	if req.DeviceID == "" {
+		WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", nil)
+		return
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "MESSAGE_CLEAR_FAILED", nil)
+		return
+	}
+	defer tx.Rollback()
+
+	if _, err = tx.Exec(`DELETE FROM message_targets WHERE message_id IN (SELECT id FROM messages WHERE sender_device_id=?)`, req.DeviceID); err == nil {
+		_, err = tx.Exec(`DELETE FROM messages WHERE sender_device_id=?`, req.DeviceID)
+	}
+	if err == nil {
+		_, err = tx.Exec(`DELETE FROM message_targets WHERE device_id=?`, req.DeviceID)
+	}
+	if err == nil {
+		_, err = tx.Exec(`DELETE FROM messages WHERE NOT EXISTS (SELECT 1 FROM message_targets WHERE message_id=messages.id)`)
+	}
+	if err != nil || tx.Commit() != nil {
+		WriteError(w, http.StatusInternalServerError, "MESSAGE_CLEAR_FAILED", nil)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, APIResponse{Success: true})
 }

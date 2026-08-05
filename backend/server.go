@@ -236,7 +236,9 @@ func (s *Server) serveFrontendDist(w http.ResponseWriter, r *http.Request) bool 
 		strings.HasPrefix(r.URL.Path, "/messages") ||
 		strings.HasPrefix(r.URL.Path, "/send") ||
 		strings.HasPrefix(r.URL.Path, "/config") ||
-		strings.HasPrefix(r.URL.Path, "/login") {
+		strings.HasPrefix(r.URL.Path, "/login") ||
+		strings.HasPrefix(r.URL.Path, "/server") ||
+		strings.HasPrefix(r.URL.Path, "/client") {
 		setNoCacheHeaders(w)
 		http.ServeFile(w, r, filepath.Join(distRoot, "index.html"))
 		return true

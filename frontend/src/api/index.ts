@@ -9,7 +9,7 @@ export const api = axios.create({
 
 function tByKey(key: string, params?: Record<string, unknown>) {
   if (i18n.global.te(key)) {
-    return i18n.global.t(key, params)
+    return params ? i18n.global.t(key, params) : i18n.global.t(key)
   }
   return i18n.global.t('error.UNKNOWN')
 }
@@ -147,6 +147,19 @@ export function updateMessageStatus(data: {
   status: 'CREATED' | 'DELIVERED' | 'READ'
 }) {
   return api.post('/message/status', data)
+}
+
+export function deleteMessage(data: {
+  message_id: string
+  device_id: string
+}) {
+  return api.post('/message/delete', data)
+}
+
+export function clearMessages(data: {
+  device_id: string
+}) {
+  return api.post('/message/clear', data)
 }
 
 export interface MessageQuery {
