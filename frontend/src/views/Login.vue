@@ -9,8 +9,8 @@
         </div>
       </header>
 
-      <div class="login-grid" :class="{ 'login-grid--client': role === 'client' }">
-        <section v-if="role === 'server'" class="qr-panel">
+      <div class="login-grid">
+        <section class="qr-panel">
           <p>{{ t('login.qrTip') }}</p>
           <div class="login-qr-wrap">
             <img :src="qrImage" :alt="t('login.qrAlt')" class="login-qr" />
@@ -41,7 +41,7 @@
             <CircleAlert :size="20" :stroke-width="3" aria-hidden="true" />
             {{ error }}
           </div>
-          <Button type="submit" variant="primary" size="lg" class="login-submit">
+          <Button type="submit" variant="primary" size="lg" class="login-submit" :loading="submitting" :disabled="submitting">
             <LogIn :size="20" aria-hidden="true" />
             {{ t('login.submit') }}
           </Button>
@@ -56,13 +56,12 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { CircleAlert, LogIn } from '@lucide/vue'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
+import { Button } from 'brutx-ui-vue/button'
+import { Card } from 'brutx-ui-vue/card'
+import { Input } from 'brutx-ui-vue/input'
+import { Select } from 'brutx-ui-vue/select'
 import { useAuthStore } from '../stores/auth'
 import { qrCodeURL, registerDevice, resolveApiErrorMessage } from '../api'
-import { currentRole } from '../utils/role'
 
 const route = useRoute()
 const router = useRouter()
@@ -71,13 +70,13 @@ const authStore = useAuthStore()
 const deviceId = ref('')
 const password = ref('')
 const error = ref('')
+const submitting = ref(false)
 const language = ref(String(locale.value || 'zh-CN'))
 const languageOptions = computed(() => [
   { label: t('configPage.languages.zhCN'), value: 'zh-CN' },
   { label: t('configPage.languages.enUS'), value: 'en-US' },
   { label: t('configPage.languages.jaJP'), value: 'ja-JP' },
 ])
-const role = computed(() => currentRole(route.path))
 const entryURL = computed(() => `${window.location.origin}/client/inbox`)
 const qrImage = computed(() => qrCodeURL(entryURL.value))
 
@@ -95,19 +94,22 @@ async function loginSubmit() {
   }
   try {
     error.value = ''
+    submitting.value = true
     await authStore.signIn(id, password.value)
     await registerDevice({
       id,
       display_name: id,
-      role: role.value,
+      role: 'server',
       platform: navigator.platform,
       browser: navigator.userAgent,
     })
     const requested = typeof route.query.redirect === 'string' ? route.query.redirect : ''
-    const safeRedirect = requested.startsWith(`/${role.value}/`) ? requested : ''
-    await router.replace(safeRedirect || (role.value === 'server' ? '/server/devices' : '/client/inbox'))
+    const safeRedirect = requested.startsWith('/server/') ? requested : ''
+    await router.replace(safeRedirect || '/server/devices')
   } catch (err) {
     error.value = resolveApiErrorMessage(err, 'login.failed')
+  } finally {
+    submitting.value = false
   }
 }
 </script>
@@ -121,7 +123,6 @@ async function loginSubmit() {
 .login-head p { margin: 0 0 3px; color: #9a4b1e; font-size: 10px; font-weight: 600; letter-spacing: .16em; }
 .login-head h1 { margin: 0; font-size: 22px; line-height: 1.2; }
 .login-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 22px; padding-top: 18px; }
-.login-grid--client { grid-template-columns: minmax(0, 460px); justify-content: center; }
 .qr-panel { display: grid; align-content: start; gap: 12px; }
 .qr-panel p { margin: 0; color: var(--brutal-muted-foreground); font-weight: 500; }
 .login-qr-wrap { display: grid; place-items: center; padding: 14px; border: 2px solid var(--brutal-border-color); border-radius: var(--brutal-radius); background: #fff; box-shadow: 3px 3px 0 var(--brutal-shadow-color); }

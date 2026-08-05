@@ -3,6 +3,13 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 @source "../node_modules/brutx-ui-vue/dist/chunks/ChatContainer-DxI1-cmJ.js";
 @source "../node_modules/brutx-ui-vue/dist/chunks/Pagination-D94MJ-5i.js";
+@source "../node_modules/brutx-ui-vue/dist/chunks/Button-CQH3jyWY.js";
+@source "../node_modules/brutx-ui-vue/dist/chunks/button-variants-BLYYjo0C.js";
+@source "../node_modules/brutx-ui-vue/dist/chunks/Card-BbuXTMF2.js";
+@source "../node_modules/brutx-ui-vue/dist/chunks/Input-Cgt7mldw.js";
+@source "../node_modules/brutx-ui-vue/dist/chunks/shared-input-variants-C8wUYxKJ.js";
+@source "../node_modules/brutx-ui-vue/dist/chunks/SelectItem-B541Rhqy.js";
+@source "../node_modules/brutx-ui-vue/dist/chunks/SelectSeparator-B4kviEmv.js";
 /* brutx-ui:start */
 @theme {
     --color-brutal-bg: var(--brutal-bg);

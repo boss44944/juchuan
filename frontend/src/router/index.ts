@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteLocationNormalized } from 'vue-router'
 import Login from '../views/Login.vue'
+import ClientLogin from '../views/client/Login.vue'
 import ServerShell from '../apps/server/ServerShell.vue'
 import ClientShell from '../apps/client/ClientShell.vue'
 import Devices from '../views/Devices.vue'
@@ -19,7 +20,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/server/login', component: Login, meta: { public: true, role: 'server' } },
-    { path: '/client/login', component: Login, meta: { public: true, role: 'client' } },
+    { path: '/client/login', component: ClientLogin, meta: { public: true, role: 'client' } },
     {
       path: '/server',
       component: ServerShell,
