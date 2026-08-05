@@ -88,7 +88,7 @@ const messages = {
         all: '全部', text: '文字', file: '文件', loading: '正在读取消息…', retry: '重新加载',
         emptyTitle: '还没有收到消息', emptyHint: '电脑发来的文字和文件会出现在这里',
         textMessage: '文字消息', fileMessage: '文件消息', receivedFile: '电脑发来的文件',
-        fromComputer: '来自电脑', copy: '复制文字', download: '下载文件', copied: '文字已复制',
+        fromComputer: '来自电脑', me: '我', delete: '删除', copy: '复制文字', download: '下载文件', copied: '文字已复制',
         copyFailed: '复制失败，请长按文字复制', loadMore: '加载更多',
         deleted: '消息已删除', deleteFailed: '删除失败', deleteTitle: '删除消息', deleteConfirm: '确定要删除这条消息吗？此操作不可撤销。', cancel: '取消', confirmDelete: '删除',
         clearAll: '清空', clearAllTitle: '清空所有消息', clearAllConfirm: '确定要清空所有消息吗？此操作不可撤销。', confirmClearAll: '清空所有', clearedAll: '所有消息已清空', clearAllFailed: '清空失败'
@@ -292,7 +292,7 @@ const messages = {
         all: 'All', text: 'Text', file: 'Files', loading: 'Loading messages…', retry: 'Try Again',
         emptyTitle: 'No messages yet', emptyHint: 'Text and files sent from your computer will appear here',
         textMessage: 'Text message', fileMessage: 'File message', receivedFile: 'File from computer',
-        fromComputer: 'From computer', copy: 'Copy Text', download: 'Download File', copied: 'Text copied',
+        fromComputer: 'From computer', me: 'Me', delete: 'Delete', copy: 'Copy Text', download: 'Download File', copied: 'Text copied',
         copyFailed: 'Copy failed. Touch and hold the text to copy it.', loadMore: 'Load More',
         deleted: 'Message deleted', deleteFailed: 'Delete failed', deleteTitle: 'Delete Message', deleteConfirm: 'Are you sure you want to delete this message? This action cannot be undone.', cancel: 'Cancel', confirmDelete: 'Delete',
         clearAll: 'Clear All', clearAllTitle: 'Clear All Messages', clearAllConfirm: 'Are you sure you want to clear all messages? This action cannot be undone.', confirmClearAll: 'Clear All', clearedAll: 'All messages cleared', clearAllFailed: 'Failed to clear messages'
@@ -496,7 +496,7 @@ const messages = {
         all: 'すべて', text: 'テキスト', file: 'ファイル', loading: 'メッセージを読み込み中…', retry: '再読み込み',
         emptyTitle: 'メッセージはまだありません', emptyHint: 'PCから送信されたテキストやファイルがここに表示されます',
         textMessage: 'テキストメッセージ', fileMessage: 'ファイルメッセージ', receivedFile: 'PCからのファイル',
-        fromComputer: 'PCから', copy: 'テキストをコピー', download: 'ファイルをダウンロード', copied: 'コピーしました',
+        fromComputer: 'PCから', me: '私', delete: '削除', copy: 'テキストをコピー', download: 'ファイルをダウンロード', copied: 'コピーしました',
         copyFailed: 'コピーできませんでした。テキストを長押ししてください。', loadMore: 'さらに読み込む',
         deleted: 'メッセージを削除しました', deleteFailed: '削除に失敗しました', deleteTitle: 'メッセージを削除', deleteConfirm: 'このメッセージを削除しますか？この操作は元に戻せません。', cancel: 'キャンセル', confirmDelete: '削除',
         clearAll: 'すべて削除', clearAllTitle: 'すべてのメッセージを削除', clearAllConfirm: 'すべてのメッセージを削除しますか？この操作は元に戻せません。', confirmClearAll: 'すべて削除', clearedAll: 'すべてのメッセージを削除しました', clearAllFailed: '削除に失敗しました'
