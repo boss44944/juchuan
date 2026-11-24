@@ -51,13 +51,7 @@ func (s *Server) SendTextMessageHandler(w http.ResponseWriter, r *http.Request) 
 			Data: message,
 		})
 		if err == nil {
-			_ = s.updateMessageTargetStatus(message.ID, id, "DELIVERED")
-			statusPayload := map[string]string{
-				"message_id": message.ID,
-				"device_id":  id,
-				"status":     "DELIVERED",
-			}
-			s.broadcastMessageStatus(message.SenderDeviceID, id, statusPayload)
+			s.markMessageDelivered(message, id)
 		}
 	}
 
@@ -103,22 +97,27 @@ func (s *Server) SendFileMessageHandler(w http.ResponseWriter, r *http.Request) 
 		_ = SaveMessageTarget(s.db, &MessageTarget{MessageID: message.ID, DeviceID: id, Status: "CREATED"})
 		err := s.hub.SendTo(id, WSMessage{Type: "MESSAGE_RECEIVED", Data: message})
 		if err == nil {
-			_ = s.updateMessageTargetStatus(message.ID, id, "DELIVERED")
-			statusPayload := map[string]string{
-				"message_id": message.ID,
-				"device_id":  id,
-				"status":     "DELIVERED",
-			}
-			s.broadcastMessageStatus(message.SenderDeviceID, id, statusPayload)
+			s.markMessageDelivered(message, id)
 		}
 	}
 
 	WriteJSON(w, http.StatusOK, APIResponse{Success: true, Data: message})
 }
 
-func (s *Server) updateMessageTargetStatus(messageID string, deviceID string, status string) error {
-	_, err := s.db.Exec(`UPDATE message_targets SET status=?, updated_at=CURRENT_TIMESTAMP WHERE message_id=? AND device_id=?`, status, messageID, deviceID)
-	return err
+func (s *Server) markMessageDelivered(message *Message, deviceID string) {
+	// The receiving client can acknowledge READ before this handler finishes its write.
+	result, err := s.db.Exec(`UPDATE message_targets SET status='DELIVERED', updated_at=CURRENT_TIMESTAMP WHERE message_id=? AND device_id=? AND status='CREATED'`, message.ID, deviceID)
+	if err != nil {
+		return
+	}
+	if updated, err := result.RowsAffected(); err != nil || updated == 0 {
+		return
+	}
+	s.broadcastMessageStatus(message.SenderDeviceID, deviceID, map[string]string{
+		"message_id": message.ID,
+		"device_id":  deviceID,
+		"status":     "DELIVERED",
+	})
 }
 
 func (s *Server) broadcastMessageStatus(senderID string, targetID string, payload map[string]string) {

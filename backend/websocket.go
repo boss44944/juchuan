@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sync"
 	"time"
@@ -21,6 +22,8 @@ type Hub struct {
 	clients map[string]*websocket.Conn
 	mu      sync.Mutex
 }
+
+var errDeviceNotConnected = errors.New("device has no WebSocket connection")
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
@@ -51,7 +54,7 @@ func (h *Hub) SendTo(deviceID string, v WSMessage) error {
 	defer h.mu.Unlock()
 	c, ok := h.clients[deviceID]
 	if !ok {
-		return nil
+		return errDeviceNotConnected
 	}
 	b, _ := json.Marshal(v)
 	return c.WriteMessage(websocket.TextMessage, b)

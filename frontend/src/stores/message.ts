@@ -15,6 +15,8 @@ export interface MessageItem {
   status?: 'CREATED' | 'DELIVERED' | 'READ'
 }
 
+const statusOrder = { CREATED: 0, DELIVERED: 1, READ: 2 } as const
+
 export const useMessageStore = defineStore('message', () => {
   const messages = ref<MessageItem[]>([])
 
@@ -40,7 +42,9 @@ export const useMessageStore = defineStore('message', () => {
       if (deviceId && msg.target_device_id && msg.target_device_id !== deviceId) {
         continue
       }
-      msg.status = status
+      if (!msg.status || statusOrder[status] >= statusOrder[msg.status]) {
+        msg.status = status
+      }
     }
   }
 

@@ -83,6 +83,7 @@ const messages = {
         mineOnly: '仅看与我相关'
       },
       actions: {
+        copy: '复制',
         batchRead: '批量标记已读',
         batchRetry: '批量重发',
         markRead: '标记已读',
@@ -104,6 +105,8 @@ const messages = {
         read: '已读'
       },
       toast: {
+        copySuccess: '已复制文字',
+        copyFailed: '无法访问剪贴板，请选中文字手动复制',
         markReadSuccess: '已标记为已读',
         markReadFailed: '标记已读失败',
         retrySuccess: '重发成功',
@@ -238,6 +241,7 @@ const messages = {
         mineOnly: 'Only Related to Me'
       },
       actions: {
+        copy: 'Copy',
         batchRead: 'Mark Selected as Read',
         batchRetry: 'Retry Selected',
         markRead: 'Mark Read',
@@ -259,6 +263,8 @@ const messages = {
         read: 'Read'
       },
       toast: {
+        copySuccess: 'Text copied',
+        copyFailed: 'Clipboard unavailable. Select the text and copy it manually.',
         markReadSuccess: 'Marked as read',
         markReadFailed: 'Failed to mark as read',
         retrySuccess: 'Resent successfully',
@@ -393,6 +399,7 @@ const messages = {
         mineOnly: '自分関連のみ'
       },
       actions: {
+        copy: 'コピー',
         batchRead: '一括既読',
         batchRetry: '一括再送',
         markRead: '既読にする',
@@ -414,6 +421,8 @@ const messages = {
         read: '既読'
       },
       toast: {
+        copySuccess: 'テキストをコピーしました',
+        copyFailed: 'クリップボードを利用できません。テキストを選択してコピーしてください。',
         markReadSuccess: '既読にしました',
         markReadFailed: '既読更新に失敗しました',
         retrySuccess: '再送しました',

@@ -98,7 +98,7 @@ const activeTitle = computed(() => {
 watch(
   () => route.path,
   async (path) => {
-    if (path === '/login') {
+    if (!route.matched.length || path === '/login') {
       return
     }
 

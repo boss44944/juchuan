@@ -66,7 +66,12 @@
         </el-table-column>
         <el-table-column :label="t('messagesPage.table.content')">
           <template #default="scope">
-            <span v-if="scope.row.type === 'TEXT'">{{ scope.row.content }}</span>
+            <div v-if="scope.row.type === 'TEXT'" class="message-text">
+              <span>{{ scope.row.content }}</span>
+              <el-button v-if="scope.row.content" link type="primary" @click="copyMessage(scope.row.content)">
+                {{ t('messagesPage.actions.copy') }}
+              </el-button>
+            </div>
             <a v-else :href="fileURL(scope.row)">{{ t('messagesPage.table.download') }}</a>
           </template>
         </el-table-column>
@@ -136,6 +141,40 @@ onMounted(async () => {
   await deviceStore.load()
   await refresh(1)
 })
+
+async function copyMessage(content: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(content)
+        ElMessage.success(t('messagesPage.toast.copySuccess'))
+        return
+      } catch {
+        // Clipboard permissions can still deny an otherwise secure page.
+      }
+    }
+
+    // Browsers visiting a LAN address over plain HTTP may not expose navigator.clipboard.
+    const previous = document.activeElement
+    const input = document.createElement('textarea')
+    input.value = content
+    input.readOnly = true
+    input.tabIndex = -1
+    input.style.cssText = 'position:fixed;left:0;top:0;opacity:0'
+    document.body.appendChild(input)
+    try {
+      input.select()
+      input.setSelectionRange(0, input.value.length)
+      if (!document.execCommand('copy')) throw new Error('Clipboard unavailable')
+    } finally {
+      input.remove()
+      if (previous instanceof HTMLElement) previous.focus()
+    }
+    ElMessage.success(t('messagesPage.toast.copySuccess'))
+  } catch {
+    ElMessage.warning(t('messagesPage.toast.copyFailed'))
+  }
+}
 
 function fileURL(item: MessageItem) {
   if (item.file_id) {
@@ -369,6 +408,11 @@ function flashHighlight(rowKey: string) {
 </script>
 
 <style scoped>
+.message-text span {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 :deep(.row-highlight > td) {
   background: rgba(255, 202, 113, 0.2) !important;
 }
