@@ -1,9 +1,13 @@
 package main
 
 import (
+	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"modernc.org/sqlite"
 )
 
 type MessageListItem struct {
@@ -82,6 +86,7 @@ WHERE ` + whereSQL
 
 	var total int
 	if err := s.db.QueryRow(countQuery, args...).Scan(&total); err != nil {
+		logMessageDatabaseError("list", "count", err)
 		WriteError(w, http.StatusInternalServerError, "MESSAGE_LIST_FAILED", nil)
 		return
 	}
@@ -107,6 +112,7 @@ LIMIT ? OFFSET ?`
 
 	rows, err := s.db.Query(listQuery, listArgs...)
 	if err != nil {
+		logMessageDatabaseError("list", "query", err)
 		WriteError(w, http.StatusInternalServerError, "MESSAGE_LIST_FAILED", nil)
 		return
 	}
@@ -125,12 +131,14 @@ LIMIT ? OFFSET ?`
 			&item.Status,
 			&item.CreatedAt,
 		); err != nil {
+			logMessageDatabaseError("list", "scan", err)
 			WriteError(w, http.StatusInternalServerError, "MESSAGE_LIST_FAILED", nil)
 			return
 		}
 		items = append(items, item)
 	}
 	if err := rows.Err(); err != nil {
+		logMessageDatabaseError("list", "iterate", err)
 		WriteError(w, http.StatusInternalServerError, "MESSAGE_LIST_FAILED", nil)
 		return
 	}
@@ -141,4 +149,14 @@ LIMIT ? OFFSET ?`
 		Page:  page,
 		Size:  size,
 	}})
+}
+
+// Internal diagnostics intentionally exclude SQL, row contents, cookies and error text.
+func logMessageDatabaseError(operation string, stage string, err error) {
+	var sqliteErr *sqlite.Error
+	if errors.As(err, &sqliteErr) {
+		log.Printf("message_database_error operation=%s stage=%s sqlite_code=%d", operation, stage, sqliteErr.Code())
+		return
+	}
+	log.Printf("message_database_error operation=%s stage=%s error_type=%T", operation, stage, err)
 }

@@ -34,6 +34,7 @@ func (s *Server) MessageStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err := s.db.Exec(`UPDATE message_targets SET status=?, updated_at=CURRENT_TIMESTAMP WHERE message_id=? AND device_id=?`, req.Status, req.MessageID, req.DeviceID)
 	if err != nil {
+		logMessageDatabaseError("status", "update", err)
 		WriteError(w, http.StatusInternalServerError, "STATUS_UPDATE_FAILED", nil)
 		return
 	}

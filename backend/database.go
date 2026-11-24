@@ -2,14 +2,34 @@ package main
 
 import (
 	"database/sql"
+	"net/url"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	_ "modernc.org/sqlite"
 )
 
+const sqliteBusyTimeoutMillis = 1000
+
 func InitDatabase(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path)
+	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
 	}
+	filePath := filepath.ToSlash(absPath)
+	if !strings.HasPrefix(filePath, "/") {
+		filePath = "/" + filePath // A Windows volume path is represented as /C:/... in file URIs.
+	}
+	// SQLite locks can briefly overlap between a page read and a device write.
+	// The driver applies this bounded wait to each connection in the pool.
+	params := url.Values{"_pragma": {"busy_timeout(" + strconv.Itoa(sqliteBusyTimeoutMillis) + ")"}}
+	dsn := url.URL{Scheme: "file", Path: filePath, RawQuery: params.Encode()}
+	db, err := sql.Open("sqlite", dsn.String())
+	if err != nil {
+		return nil, err
+	}
+
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS history(
  id INTEGER PRIMARY KEY AUTOINCREMENT,
