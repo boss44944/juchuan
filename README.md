@@ -311,6 +311,16 @@ go run .
 
 脚本按锁文件在临时目录构建 Vue，将新生成的 HTML、JS、CSS 和图片编进 Go 二进制；不改写仓库内的预制静态文件。把生成的程序复制到任意目录直接运行即可。它始终使用编进程序的页面，不需要 Node.js、Vite 服务或 `frontend/dist`。目标平台和架构默认使用本机 Go 配置。
 
+## 构建 Apple Silicon macOS App
+
+在 Apple Silicon 的 macOS 上安装 Xcode Command Line Tools、Go 1.24+ 和 Node.js 22.12+，然后在仓库根目录运行：
+
+```bash
+./backend/build-mac-app.sh
+```
+
+脚本会在当前目录生成 `Juchuan.app`（若已有同名 App，先移走旧包）。应用内嵌新构建的 Vue 页面，不依赖仓库、Node.js 或开发服务器。CI 生成的 ZIP 是通过临时签名验证的构建产物，不是已公证的对外发布包。
+
 ---
 
 # 技术栈
