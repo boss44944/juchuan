@@ -154,6 +154,10 @@ func (s *Server) ShouldAutoOpen() bool {
 	return s.config.AutoOpen
 }
 
+// The standalone build sets this at link time to serve exactly the compiled bundle,
+// even when it is launched next to a different development checkout.
+var frontendEmbeddedOnly = "false"
+
 func (s *Server) registerWebRoutes(mux *http.ServeMux) {
 	staticFS, err := fs.Sub(s.staticFS, "static")
 	if err != nil {
@@ -167,89 +171,42 @@ func (s *Server) registerWebRoutes(mux *http.ServeMux) {
 	}))
 	mux.Handle("/static/", staticHandler)
 
-	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		if s.serveFrontendDist(w, r) {
-			return
-		}
-		s.serveEmbeddedStaticFile(w, r, staticFS, "login.html")
-	})
-	mux.HandleFunc("/app", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet || r.Method == http.MethodHead {
-			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-			return
-		}
-		if s.serveFrontendDist(w, r) {
-			return
-		}
-		s.serveEmbeddedStaticFile(w, r, staticFS, "app.html")
-	})
-
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/") || strings.HasPrefix(r.URL.Path, "/ws") {
 			http.NotFound(w, r)
 			return
 		}
-
-		if s.serveFrontendDist(w, r) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			w.Header().Set("Allow", "GET, HEAD")
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path == "/app" {
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 			return
 		}
 
-		s.serveEmbeddedStaticFile(w, r, staticFS, "index.html")
+		frontend := frontendFiles(staticFS)
+		name := strings.TrimPrefix(r.URL.Path, "/")
+		switch strings.TrimSuffix(r.URL.Path, "/") {
+		case "", "/login", "/devices", "/messages", "/send", "/config":
+			name = "index.html"
+		}
+		if info, err := fs.Stat(frontend, name); err != nil || info.IsDir() {
+			http.NotFound(w, r)
+			return
+		}
+		setNoCacheHeaders(w)
+		http.ServeFileFS(w, r, frontend, name)
 	})
 }
 
-func (s *Server) serveEmbeddedStaticFile(w http.ResponseWriter, r *http.Request, staticFS fs.FS, name string) {
-	b, err := fs.ReadFile(staticFS, name)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	setNoCacheHeaders(w)
-
-	switch filepath.Ext(name) {
-	case ".html":
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	case ".js":
-		w.Header().Set("Content-Type", "application/javascript")
-	case ".css":
-		w.Header().Set("Content-Type", "text/css; charset=utf-8")
-	}
-
-	_, _ = w.Write(b)
-}
-
-func (s *Server) serveFrontendDist(w http.ResponseWriter, r *http.Request) bool {
-	distRoot := filepath.Clean(filepath.Join("..", "frontend", "dist"))
-	if _, err := os.Stat(filepath.Join(distRoot, "index.html")); err != nil {
-		return false
-	}
-
-	if strings.HasPrefix(r.URL.Path, "/assets/") {
-		setNoCacheHeaders(w)
-		http.FileServer(http.Dir(distRoot)).ServeHTTP(w, r)
-		return true
-	}
-
-	if r.URL.Path == "/" || r.URL.Path == "/index.html" ||
-		strings.HasPrefix(r.URL.Path, "/devices") ||
-		strings.HasPrefix(r.URL.Path, "/messages") ||
-		strings.HasPrefix(r.URL.Path, "/send") ||
-		strings.HasPrefix(r.URL.Path, "/config") ||
-		strings.HasPrefix(r.URL.Path, "/login") {
-		setNoCacheHeaders(w)
-		http.ServeFile(w, r, filepath.Join(distRoot, "index.html"))
-		return true
-	}
-
-	full := filepath.Clean(filepath.Join(distRoot, strings.TrimPrefix(r.URL.Path, "/")))
-	if strings.HasPrefix(full, distRoot) {
-		if _, err := os.Stat(full); err == nil {
-			setNoCacheHeaders(w)
-			http.ServeFile(w, r, full)
-			return true
+func frontendFiles(embedded fs.FS) fs.FS {
+	if frontendEmbeddedOnly != "true" {
+		dist := os.DirFS(filepath.Join("..", "frontend", "dist"))
+		if info, err := fs.Stat(dist, "index.html"); err == nil && !info.IsDir() {
+			return dist
 		}
 	}
-
-	return false
+	return embedded
 }

@@ -299,7 +299,17 @@ cd ../backend
 go run .
 ```
 
-构建后，Go 服务优先托管 `frontend/dist`；如果 dist 不存在，会回退到 `static/` 兼容页面。
+开发时，Go 服务优先托管 `frontend/dist`；如果 dist 不存在，则使用当前 Go 二进制内嵌的 Vue 页面。
+
+## 生成单体程序
+
+在仓库根目录运行（需要 Go 1.24+ 和 Node.js 22.12+）：
+
+```bash
+./scripts/build-single-binary.sh ./dist/juchuan
+```
+
+脚本按锁文件在临时目录构建 Vue，将新生成的 HTML、JS、CSS 和图片编进 Go 二进制；不改写仓库内的预制静态文件。把生成的程序复制到任意目录直接运行即可。它始终使用编进程序的页面，不需要 Node.js、Vite 服务或 `frontend/dist`。目标平台和架构默认使用本机 Go 配置。
 
 ---
 
