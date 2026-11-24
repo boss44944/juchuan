@@ -3,14 +3,26 @@ name: macOS App
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths:
-      - 'build-mac-app.sh'
-      - 'app-logo.png'
+      - 'backend/**'
+      - 'frontend/**'
+      - 'scripts/build-single-binary.sh'
       - '.github/workflows/macos-app.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'scripts/build-single-binary.sh'
+      - '.github/workflows/macos-app.yml'
+
+permissions:
+  contents: read
 
 jobs:
   build-macos-app:
-    runs-on: macos-latest
+    runs-on: macos-15
 
     steps:
       - name: Checkout
@@ -20,27 +32,34 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
+          cache-dependency-path: backend/go.sum
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Build App
-        run: |
-          chmod +x build-mac-app.sh
-          ./build-mac-app.sh
+        run: ./backend/build-mac-app.sh
 
       - name: Verify App Bundle
         run: |
           test -d Juchuan.app
           test -f Juchuan.app/Contents/Info.plist
-          test -f Juchuan.app/Contents/MacOS/juchuan
-          test -f Juchuan.app/Contents/Resources/Juchuan.icns
-          file Juchuan.app/Contents/MacOS/juchuan
-          codesign --verify --deep --strict Juchuan.app || true
+          test -x Juchuan.app/Contents/MacOS/juchuan
+          test -s Juchuan.app/Contents/Resources/Juchuan.icns
+          test "$(lipo -archs Juchuan.app/Contents/MacOS/juchuan)" = arm64
+          plutil -lint Juchuan.app/Contents/Info.plist
+          codesign --verify --deep --strict Juchuan.app
 
       - name: Package
-        run: |
-          zip -r Juchuan-darwin-arm64.zip Juchuan.app
+        run: ditto -c -k --sequesterRsrc --keepParent Juchuan.app Juchuan-darwin-arm64.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Juchuan-darwin-arm64
           path: Juchuan-darwin-arm64.zip
+          if-no-files-found: error

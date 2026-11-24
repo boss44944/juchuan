@@ -1,31 +1,40 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-APP_NAME="Juchuan"
-BINARY="juchuan"
-APP_DIR="${APP_NAME}.app"
-CONTENTS="${APP_DIR}/Contents"
-
-rm -rf "${APP_DIR}"
-mkdir -p "${CONTENTS}/MacOS" "${CONTENTS}/Resources"
-
-GOOS=darwin GOARCH=arm64 go build -o "${CONTENTS}/MacOS/${BINARY}" .
-
-if [ -f "app-logo.png" ]; then
-  mkdir -p icon.iconset
-  sips -z 16 16 app-logo.png --out icon.iconset/icon_16x16.png >/dev/null
-  sips -z 32 32 app-logo.png --out icon.iconset/icon_16x16@2x.png >/dev/null
-  sips -z 32 32 app-logo.png --out icon.iconset/icon_32x32.png >/dev/null
-  sips -z 64 64 app-logo.png --out icon.iconset/icon_32x32@2x.png >/dev/null
-  sips -z 128 128 app-logo.png --out icon.iconset/icon_128x128.png >/dev/null
-  sips -z 256 256 app-logo.png --out icon.iconset/icon_128x128@2x.png >/dev/null
-  sips -z 256 256 app-logo.png --out icon.iconset/icon_256x256.png >/dev/null
-  sips -z 512 512 app-logo.png --out icon.iconset/icon_256x256@2x.png >/dev/null
-  sips -z 512 512 app-logo.png --out icon.iconset/icon_512x512.png >/dev/null
-  sips -z 1024 1024 app-logo.png --out icon.iconset/icon_512x512@2x.png >/dev/null
-  iconutil -c icns icon.iconset -o "${CONTENTS}/Resources/Juchuan.icns"
-  rm -rf icon.iconset
+if [[ "$(uname -s)" != "Darwin" || "$(uname -m)" != "arm64" ]]; then
+  echo "Juchuan.app packaging requires a native Apple Silicon macOS environment." >&2
+  exit 1
 fi
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+REPO_ROOT=$(cd -- "${SCRIPT_DIR}/.." && pwd -P)
+DESTINATION="$(pwd -P)/Juchuan.app"
+if [[ -e "${DESTINATION}" || -L "${DESTINATION}" ]]; then
+  echo "Move the existing Juchuan.app aside before packaging." >&2
+  exit 1
+fi
+
+STAGE=$(mktemp -d "$(pwd -P)/.juchuan-app.XXXXXX")
+trap 'rm -rf -- "${STAGE}"' EXIT
+trap 'exit 1' HUP INT TERM
+
+BINARY="juchuan"
+APP_DIR="${STAGE}/Juchuan.app"
+CONTENTS="${APP_DIR}/Contents"
+ICON_SOURCE="${SCRIPT_DIR}/app-logo.png"
+ICON_SET="${STAGE}/Juchuan.iconset"
+mkdir -p "${CONTENTS}/MacOS" "${CONTENTS}/Resources" "${ICON_SET}"
+
+GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 MACOSX_DEPLOYMENT_TARGET=13.0 \
+  "${REPO_ROOT}/scripts/build-single-binary.sh" "${CONTENTS}/MacOS/${BINARY}"
+
+for size in 16 32 128 256 512; do
+  sips -z "${size}" "${size}" "${ICON_SOURCE}" \
+    --out "${ICON_SET}/icon_${size}x${size}.png" >/dev/null
+  sips -z "$((size * 2))" "$((size * 2))" "${ICON_SOURCE}" \
+    --out "${ICON_SET}/icon_${size}x${size}@2x.png" >/dev/null
+done
+iconutil -c icns "${ICON_SET}" -o "${CONTENTS}/Resources/Juchuan.icns"
 
 cat > "${CONTENTS}/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -65,12 +74,11 @@ cat > "${CONTENTS}/Info.plist" <<EOF
 EOF
 
 plutil -lint "${CONTENTS}/Info.plist"
-file "${CONTENTS}/MacOS/${BINARY}"
+test -x "${CONTENTS}/MacOS/${BINARY}"
+[[ "$(lipo -archs "${CONTENTS}/MacOS/${BINARY}")" == "arm64" ]]
 
-chmod +x "${CONTENTS}/MacOS/${BINARY}"
-
-codesign --force --deep --sign - "${APP_DIR}" || true
-
-codesign --verify --deep --strict "${APP_DIR}" || true
-
-echo "Created ${APP_DIR}"
+# Ad hoc signing is enough for verifying a local build artifact, not public distribution.
+codesign --force --sign - "${APP_DIR}"
+codesign --verify --deep --strict "${APP_DIR}"
+mv "${APP_DIR}" "${DESTINATION}"
+echo "Created ${DESTINATION}"
