@@ -1,6 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Source+Sans+3:wght@400;600;700&display=swap');
-
 :root {
+  --jc-font-family: 'Noto Sans SC', 'Noto Sans CJK SC', 'Source Sans 3', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --jc-bg: #2b1a0f;
   --jc-bg-soft: #4b2b15;
   --jc-surface: rgba(77, 43, 20, 0.7);
@@ -27,7 +26,7 @@
   --el-color-warning: #f0a634;
   --el-color-danger: #ff7e67;
   --el-box-shadow-light: 0 16px 36px rgba(31, 14, 5, 0.34);
-  --el-font-family: 'Noto Sans SC', 'Source Sans 3', sans-serif;
+  --el-font-family: var(--jc-font-family);
 }
 
 * {
@@ -44,7 +43,7 @@ body,
     url('/art/van-gogh-sunflowers-bg.jpg') center / cover fixed no-repeat,
     var(--jc-bg);
   color: var(--jc-text);
-  font-family: 'Noto Sans SC', 'Source Sans 3', sans-serif;
+  font-family: var(--jc-font-family);
 }
 
 body::before {
@@ -99,7 +98,7 @@ a {
 
 .panel-title {
   margin: 0;
-  font-family: 'Noto Sans SC', 'Source Sans 3', sans-serif;
+  font-family: var(--jc-font-family);
   font-size: 20px;
   font-weight: 600;
   letter-spacing: 0.03em;
